@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Nexium</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#06131f;--s1:#0d2236;--s2:#14304a;--ink:#e9f2fb;--mute:#7f9bb5;--blue:#3d6bff;--ice:#a9d8ff;--up:#6fe0b4;--down:#ff7a59;--r:22px}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 Onest,system-ui,sans-serif;padding:max(16px,env(safe-area-inset-top)) 16px 96px}
+h1,.num{font-family:Unbounded,sans-serif;font-weight:700}
+.hero{position:relative;overflow:hidden;border-radius:30px;padding:26px 22px 22px;margin-top:8px;
+ background:radial-gradient(120% 90% at 100% 0%,#3d6bff 0%,transparent 55%),radial-gradient(90% 80% at 0% 100%,#0e6e8c 0%,transparent 60%),#0b2238}
+.hero:after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,transparent 0 18px,rgba(255,255,255,.035) 18px 19px)}
+.hero>*{position:relative;z-index:1}
+.hello{color:var(--ice);opacity:.85}
+.total{font-size:clamp(30px,10vw,42px);margin:6px 0 4px;letter-spacing:-.03em}
+.wid{display:inline-flex;gap:8px;align-items:center;background:rgba(6,19,31,.45);padding:7px 12px;border-radius:99px;font-size:13px;border:0;color:var(--ink);font-family:inherit}
+.acts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 22px}
+.act{background:var(--s1);border:0;color:var(--ink);border-radius:18px;padding:14px 6px;font:500 14px Onest;display:flex;flex-direction:column;gap:6px;align-items:center}
+.act svg{width:22px;height:22px;stroke:var(--ice);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.act:active,.btn:active{transform:scale(.97)}
+h2{font:500 13px Unbounded;color:var(--mute);margin:0 4px 10px}
+.list{background:var(--s1);border-radius:var(--r);overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:14px 16px}
+.row+.row{border-top:1px solid rgba(255,255,255,.05)}
+.ic{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;font:700 12px Unbounded;color:#06131f;flex:none}
+.grow{flex:1;min-width:0}.sub{color:var(--mute);font-size:13px}
+.r{text-align:right}.up{color:var(--up)}.down{color:var(--down)}
+.tabs{position:fixed;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));display:flex;gap:6px;background:rgba(13,34,54,.92);backdrop-filter:blur(14px);padding:6px;border-radius:24px}
+.tabs button{flex:1;border:0;background:none;color:var(--mute);padding:12px;border-radius:18px;font:500 14px Onest}
+.tabs .on{background:var(--blue);color:#fff}
+.sheet{position:fixed;inset:0;background:rgba(2,8,14,.7);display:none;align-items:flex-end;z-index:9}
+.sheet.show{display:flex}
+.card{background:var(--s1);width:100%;border-radius:28px 28px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom));animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.card h3{font:700 18px Unbounded;margin-bottom:14px}
+input,select{width:100%;background:var(--s2);border:1px solid transparent;color:var(--ink);padding:14px;border-radius:14px;font:500 16px Onest;margin-bottom:10px;outline:0}
+input:focus,select:focus{border-color:var(--blue)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{width:100%;border:0;background:var(--blue);color:#fff;padding:15px;border-radius:16px;font:600 16px Onest}
+.btn.ghost{background:var(--s2);margin-top:8px}
+.toast{position:fixed;top:16px;left:50%;transform:translate(-50%,-90px);background:#fff;color:#06131f;padding:11px 18px;border-radius:99px;font-weight:600;z-index:20;transition:.3s;max-width:90%}
+.toast.show{transform:translate(-50%,0)}.toast.bad{background:var(--down)}
+.pane{display:none}.pane.on{display:block}
+.chk{word-break:break-all;background:var(--s2);padding:12px;border-radius:14px;margin-bottom:10px;font-size:14px}
+.empty{padding:28px;text-align:center;color:var(--mute)}
+.tag{font-size:11px;background:var(--down);color:#06131f;padding:2px 7px;border-radius:99px;margin-left:6px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body>
+<section class="pane on" id="p-w">
+ <div class="hero"><div class="hello" id="hello">Nexium</div><div class="total num" id="total">$0.00</div>
+  <button class="wid" id="widBtn">ID <b id="wid">…</b></button></div>
+ <div class="acts">
+  <button class="act" data-open="send"><svg viewBox="0 0 24 24"><path d="M5 19 19 5M9 5h10v10"/></svg>Отправить</button>
+  <button class="act" data-open="check"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/></svg>Чек</button>
+  <button class="act" data-open="recv"><svg viewBox="0 0 24 24"><path d="M19 5 5 19M15 19H5V9"/></svg>Получить</button>
+ </div>
+ <h2>Активы</h2><div class="list" id="coins"></div>
+</section>
+<section class="pane" id="p-h"><h2>История</h2><div class="list" id="hist"></div></section>
+<section class="pane" id="p-a">
+ <h2>Админка</h2>
+ <div class="list" style="padding:16px;margin-bottom:14px"><div class="sub">Пользователей: <b id="aN" style="color:var(--ink)">–</b> · В системе: <span id="aT"></span></div></div>
+ <div class="list" style="padding:16px;margin-bottom:14px"><h3 class="num" style="font-size:15px;margin-bottom:12px">Выдать / списать</h3>
+  <input id="gTo" placeholder="Telegram ID или ID кошелька"><div class="two"><input id="gAmt" inputmode="decimal" placeholder="Сумма (−5 списать)"><select id="gCur" class="cursel"></select></div><button class="btn" id="gBtn">Выдать</button></div>
+ <div class="list" style="padding:16px;margin-bottom:14px"><h3 class="num" style="font-size:15px;margin-bottom:12px">Сменить ID кошелька</h3>
+  <input id="wTo" placeholder="Telegram ID или текущий ID"><input id="wNew" placeholder="Новый ID, например KELD"><button class="btn" id="wBtn">Сменить</button></div>
+ <div class="list" style="padding:16px;margin-bottom:14px"><h3 class="num" style="font-size:15px;margin-bottom:12px">Блокировка</h3>
+  <input id="bTo" placeholder="Telegram ID или ID кошелька"><div class="two"><button class="btn" id="bOn" style="background:var(--down)">Забанить</button><button class="btn" id="bOff" style="background:var(--s2)">Разбанить</button></div></div>
+ <h2>Пользователи</h2><div class="list" id="aList"></div>
+</section>
+<div class="tabs"><button class="on" data-t="w">Кошелёк</button><button data-t="h">История</button><button data-t="a" id="tabA" hidden>Админ</button></div>
+
+<div class="sheet" id="sheet"><div class="card" id="card"></div></div><div class="toast" id="toast"></div>
+<script>
+const tg=window.Telegram?.WebApp;tg?.ready();tg?.expand();tg?.setHeaderColor?.('#06131f');tg?.setBackgroundColor?.('#06131f');
+const C={TON:{id:'the-open-network',c:'#7cc4ff'},BTC:{id:'bitcoin',c:'#ffb866'},ETH:{id:'ethereum',c:'#b9a8ff'},USDT:{id:'tether',c:'#6fe0b4'},SOL:{id:'solana',c:'#8ef0d0'}};
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+let S={me:null,isAdmin:false},P={};
+const usd=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:n<1?4:2});
+const amt=n=>(+n).toLocaleString('ru-RU',{maximumFractionDigits:8});
+function toast(t,bad){const e=$('#toast');e.textContent=t;e.className='toast show'+(bad?' bad':'');clearTimeout(toast.t);toast.t=setTimeout(()=>e.className='toast',2400)}
+async function api(action,d={}){
+ try{const r=await fetch('/api/app',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:tg?.initData||'',action,...d})});
+ const j=await r.json();if(!r.ok){toast(j.err||'Ошибка',1);return null}if(j.me){S.me=j.me;S.isAdmin=j.isAdmin;render()}return j}catch{toast('Нет связи с сервером',1)}}
+async function rates(){
+ try{const ids=Object.values(C).map(x=>x.id).join(',');
+ const j=await(await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`)).json();
+ for(const k in C){const x=j[C[k].id];if(x)P[k]={p:x.usd,d:x.usd_24h_change||0}}render()}catch{}}
+function render(){
+ const m=S.me;if(!m)return;
+ $('#hello').textContent='Привет, '+(m.name||'друг');$('#wid').textContent=m.wid;$('#tabA').hidden=!S.isAdmin;
+ let t=0;$('#coins').innerHTML=Object.keys(C).map(k=>{const b=m.bal[k]||0,p=P[k];t+=b*(p?.p||0);
+  return `<div class="row"><div class="ic" style="background:${C[k].c}">${k.slice(0,3)}</div><div class="grow"><b>${k}</b><div class="sub">${p?usd(p.p):'…'} <span class="${p?.d>=0?'up':'down'}">${p?(p.d>=0?'+':'')+p.d.toFixed(2)+'%':''}</span></div></div><div class="r"><b>${amt(b)}</b><div class="sub">${p?usd(b*p.p):''}</div></div></div>`}).join('');
+ $('#total').textContent=usd(t);
+ const L={in:'Получено',out:'Отправлено',check_in:'Чек активирован',check_out:'Чек списан',admin:'Начисление'};
+ $('#hist').innerHTML=m.tx.length?m.tx.map(x=>`<div class="row"><div class="grow"><b>${L[x.t]||x.t}</b><div class="sub">${new Date(x.ts).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}${x.w?' · '+x.w:''}</div></div><b class="${x.a>=0?'up':'down'}">${x.a>0?'+':''}${amt(x.a)} ${x.c}</b></div>`).join(''):'<div class="empty">Операций пока нет. Отправь первый перевод или активируй чек.</div>';
+}
+const opts=()=>Object.keys(C).map(k=>`<option>${k}</option>`).join('');
+function sheet(html){$('#card').innerHTML=html;$('#sheet').classList.add('show')}
+const close=()=>$('#sheet').classList.remove('show');
+$('#sheet').onclick=e=>{if(e.target.id==='sheet')close()};
+const forms={
+ send:()=>sheet(`<h3>Отправить</h3><input id="f1" placeholder="ID кошелька получателя, например NX1234567"><div class="two"><input id="f2" inputmode="decimal" placeholder="Сумма"><select id="f3">${opts()}</select></div><button class="btn" id="go">Отправить</button>`),
+ check:()=>sheet(`<h3>Создать чек</h3><div class="two"><input id="f2" inputmode="decimal" placeholder="Сумма"><select id="f3">${opts()}</select></div><button class="btn" id="go">Создать ссылку</button><div class="sub" style="margin-top:12px">Чек можно отправить и в любом чате: напиши <b>@NexiumWallet_bot 1 TON</b>. Активировать его сможет только один человек.</div>`),
+ recv:()=>sheet(`<h3>Получить</h3><div class="sub">Твой ID кошелька</div><div class="chk num" style="font-size:20px">${S.me.wid}</div><button class="btn" id="go">Скопировать ID</button>`)};
+document.addEventListener('click',async e=>{
+ const o=e.target.closest('[data-open]');if(o){forms[o.dataset.open]();window.mode=o.dataset.open;return}
+ if(e.target.closest('#widBtn')||(e.target.id==='go'&&window.mode==='recv')){navigator.clipboard?.writeText(S.me.wid);toast('ID скопирован');return}
+ if(e.target.id==='go'){const a=$('#f2').value,c=$('#f3').value;
+  if(window.mode==='send'){const r=await api('send',{to:$('#f1').value,amt:a,cur:c});if(r){close();toast('Отправлено')}}
+  else{const r=await api('mkcheck',{amt:a,cur:c});if(r)sheet(`<h3>Чек готов</h3><div class="chk">${r.link}</div><button class="btn" id="cp">Скопировать</button><button class="btn ghost" id="sh">Поделиться</button>`),window.lk=r.link}return}
+ if(e.target.id==='cp'){navigator.clipboard?.writeText(window.lk);toast('Ссылка скопирована')}
+ if(e.target.id==='sh'){tg?tg.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(window.lk)+'&text='+encodeURIComponent('Держи чек')):0}
+ const t=e.target.closest('[data-t]');if(t){$$('.tabs button').forEach(b=>b.classList.toggle('on',b===t));$$('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+t.dataset.t));if(t.dataset.t==='a')admin()}
+});
+async function admin(){const r=await api('a_stats');if(!r)return;
+ $('#aN').textContent=r.users.length;$('#aT').textContent=Object.entries(r.tot).map(([k,v])=>amt(v)+' '+k).join(', ')||'пусто';
+ $('#aList').innerHTML=r.users.map(u=>`<div class="row"><div class="grow"><b>${u.name||'—'}</b>${u.banned?'<span class="tag">бан</span>':''}<div class="sub">${u.wid} · tg ${u.id}</div></div><div class="r sub">${Object.entries(u.bal).filter(x=>x[1]).map(([k,v])=>amt(v)+' '+k).join('<br>')}</div></div>`).join('')}
+$('#gCur').innerHTML=opts();
+const done=async(a,d)=>{const r=await api(a,d);if(r){toast(r.done||'Готово');admin()}};
+$('#gBtn').onclick=()=>done('a_give',{to:$('#gTo').value,amt:$('#gAmt').value,cur:$('#gCur').value});
+$('#wBtn').onclick=()=>done('a_setwid',{to:$('#wTo').value,wid:$('#wNew').value});
+$('#bOn').onclick=()=>done('a_ban',{to:$('#bTo').value,on:true});
+$('#bOff').onclick=()=>done('a_ban',{to:$('#bTo').value,on:false});
+api('me');rates();setInterval(rates,45000);
+</script></body></html>
