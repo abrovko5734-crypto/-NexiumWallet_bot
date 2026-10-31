@@ -1,4 +1,4 @@
-import { CUR, ADMIN, tg, getUser, claim, makeCheck, clean } from '../lib/core.js';
+import { CUR, tg, getUser, claim, makeCheck, clean } from '../lib/core.js';
 const name = f => f.first_name || f.username || 'user';
 const BOT = () => process.env.BOT_USERNAME || 'NexiumWallet_bot';
 const open = () => ({ inline_keyboard: [[{ text: 'Открыть кошелёк', web_app: { url: process.env.APP_URL } }]] });
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
       const mt = q.query.trim().match(/^([\d.,]+)\s*([a-zA-Z]+)$/), cur = mt?.[2].toUpperCase(), amt = mt && clean(mt[1]);
       if (me.banned) { await hint(q, 'ban', 'Аккаунт заблокирован', 'Обратись к администратору'); return res.json({ ok: 1 }); }
       if (!mt || !amt || !CUR.includes(cur)) { await hint(q, 'hint', 'Создать чек', `Напиши сумму и монету, например 1 USDT. Доступно: ${CUR.join(', ')}`); return res.json({ ok: 1 }); }
-      if (String(q.from.id) !== ADMIN && (me.bal[cur] || 0) < amt) { await hint(q, 'low', `Недостаточно ${cur}`, `На балансе: ${me.bal[cur] || 0} ${cur}`); return res.json({ ok: 1 }); }
+      if ((me.bal[cur] || 0) < amt) { await hint(q, 'low', `Недостаточно ${cur}`, `На балансе: ${me.bal[cur] || 0} ${cur}`); return res.json({ ok: 1 }); }
       const code = await makeCheck(q.from.id, cur, amt);
       await tg('answerInlineQuery', { inline_query_id: q.id, cache_time: 0, is_personal: true, results: [{
         type: 'article', id: code, title: `Чек на ${amt} ${cur}`, description: 'Нажми, чтобы отправить в чат',

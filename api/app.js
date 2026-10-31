@@ -79,7 +79,7 @@ export default async function handler(req, res) {
       }
       case 'mkcheck': {
         if (!CUR.includes(cur) || !amt) return fail('Проверь сумму и монету');
-        if (!isAdmin && (me.bal[cur] || 0) < amt) return fail('Недостаточно средств');
+        if ((me.bal[cur] || 0) < amt) return fail('Недостаточно ' + cur);
         const code = await makeCheck(me.id, cur, amt);
         return ok({ link: `https://t.me/${process.env.BOT_USERNAME || 'NexiumWallet_bot'}?start=c_${code}` });
       }
