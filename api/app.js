@@ -1,4 +1,4 @@
-import { CUR, ADMIN, R, verify, getUser, save, log, clean, add, makeCheck } from '../lib/core.js';
+import { CUR, ADMIN, R, verify, getUser, save, log, clean, add, makeCheck, PAIRS, PAYOUT, lastPrice, priceAt } from '../lib/core.js';
 
 async function find(q) {
   q = String(q || '').trim().toUpperCase();
@@ -25,6 +25,57 @@ export default async function handler(req, res) {
         add(me, cur, -amt); log(me, { t: 'out', c: cur, a: -amt, w: to.wid });
         add(to, cur, amt); log(to, { t: 'in', c: cur, a: amt, w: me.wid });
         await save(me); await save(to); return ok();
+      }
+      case 'trade_open': {
+        const sec = Number(b.sec), st = clean(b.amt), coin = String(b.coin || '').toUpperCase();
+        if (!PAIRS[coin] || ![30, 60, 300].includes(sec) || !['up', 'down'].includes(b.dir)) return fail('Неверные параметры');
+        if (st < 1) return fail('Минимальная ставка 1 USDT');
+        if ((me.bal.USDT || 0) < st) return fail('Недостаточно USDT');
+        me.open = me.open || []; if (me.open.length >= 5) return fail('Не больше 5 открытых сделок');
+        const px = await lastPrice(coin);
+        add(me, 'USDT', -st); log(me, { t: 'trade_bet', c: 'USDT', a: -st });
+        me.open.push({ id: Date.now().toString(36), coin, dir: b.dir, st, px, exp: Date.now() + sec * 1000 });
+        await save(me); return ok();
+      }
+      case 'settle': {
+        me.open = me.open || []; me.done = me.done || []; const keep = [];
+        for (const t of me.open) {
+          if (Date.now() < t.exp) { keep.push(t); continue; }
+          const cl = await priceAt(t.coin, t.exp), win = t.dir === 'up' ? cl > t.px : cl < t.px, tie = cl === t.px;
+          const pay = tie ? t.st : win ? Math.round(t.st * PAYOUT * 1e8) / 1e8 : 0;
+          if (pay) { add(me, 'USDT', pay); log(me, { t: 'trade_win', c: 'USDT', a: pay }); }
+          me.done.unshift({ ...t, cl, r: tie ? 'tie' : win ? 'win' : 'lose', pay }); me.done = me.done.slice(0, 15);
+        }
+        me.open = keep; await save(me); return ok();
+      }
+      case 'p2p_list': {
+        const ids = await R('SMEMBERS', 'offers'), list = [];
+        for (const i of ids.slice(0, 60)) { const r = await R('GET', 'offer:' + i); if (r) list.push(JSON.parse(r)); else await R('SREM', 'offers', i); }
+        return ok({ offers: list.sort((x, y) => y.ts - x.ts) });
+      }
+      case 'p2p_make': {
+        const sc = String(b.sc).toUpperCase(), wc = String(b.wc).toUpperCase(), sa = clean(b.sa), wa = clean(b.wa);
+        if (!CUR.includes(sc) || !CUR.includes(wc) || sc === wc || !sa || !wa) return fail('Проверь монеты и суммы');
+        if ((me.bal[sc] || 0) < sa) return fail('Недостаточно ' + sc);
+        add(me, sc, -sa); await save(me);
+        const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        await R('SET', 'offer:' + id, JSON.stringify({ id, o: me.id, ow: me.wid, sc, sa, wc, wa, ts: Date.now() })); await R('SADD', 'offers', id);
+        return ok();
+      }
+      case 'p2p_buy': case 'p2p_cancel': {
+        const raw = await R('GET', 'offer:' + b.id); if (!raw) return fail('Объявление уже недоступно');
+        const o = JSON.parse(raw), buy = b.action === 'p2p_buy';
+        if (buy && o.o === me.id) return fail('Это твоё объявление');
+        if (!buy && o.o !== me.id) return fail('Нет доступа');
+        if (buy && (me.bal[o.wc] || 0) < o.wa) return fail('Недостаточно ' + o.wc);
+        if ((await R('DEL', 'offer:' + b.id)) !== 1) return fail('Объявление уже недоступно'); // одна сделка на объявление
+        await R('SREM', 'offers', b.id);
+        if (buy) {
+          const ow = await getUser(o.o);
+          add(me, o.wc, -o.wa); add(me, o.sc, o.sa); log(me, { t: 'p2p_buy', c: o.sc, a: o.sa, w: o.ow });
+          add(ow, o.wc, o.wa); log(ow, { t: 'p2p_sell', c: o.wc, a: o.wa, w: me.wid }); await save(ow);
+        } else add(me, o.sc, o.sa);
+        await save(me); return ok();
       }
       case 'mkcheck': {
         if (!CUR.includes(cur) || !amt) return fail('Проверь сумму и монету');

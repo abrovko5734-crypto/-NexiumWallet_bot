@@ -28,7 +28,7 @@ h2{font:500 13px Unbounded;color:var(--mute);margin:0 4px 10px}
 .grow{flex:1;min-width:0}.sub{color:var(--mute);font-size:13px}
 .r{text-align:right}.up{color:var(--up)}.down{color:var(--down)}
 .tabs{position:fixed;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));display:flex;gap:6px;background:rgba(13,34,54,.92);backdrop-filter:blur(14px);padding:6px;border-radius:24px}
-.tabs button{flex:1;border:0;background:none;color:var(--mute);padding:12px;border-radius:18px;font:500 14px Onest}
+.tabs button{flex:1;border:0;background:none;color:var(--mute);padding:12px 4px;border-radius:18px;font:500 13px Onest}
 .tabs .on{background:var(--blue);color:#fff}
 .sheet{position:fixed;inset:0;background:rgba(2,8,14,.7);display:none;align-items:flex-end;z-index:9}
 .sheet.show{display:flex}
@@ -47,6 +47,11 @@ input:focus,select:focus{border-color:var(--blue)}
 .empty{padding:28px;text-align:center;color:var(--mute)}
 .tag{font-size:11px;background:var(--down);color:#06131f;padding:2px 7px;border-radius:99px;margin-left:6px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.chipbar{display:flex;gap:8px;overflow-x:auto;margin:6px 0 12px}.chip{border:0;background:var(--s1);color:var(--mute);padding:10px 16px;border-radius:99px;font:500 14px Onest;flex:none}.chip.on{background:var(--ice);color:#06131f}
+.chart{background:var(--s1);border-radius:var(--r);padding:16px 16px 6px;margin-bottom:12px}.px{font-size:24px;letter-spacing:-.02em}canvas{width:100%;height:150px;display:block}
+.btn.up{background:#1f9d73}.btn.dn{background:#d9503a}.btn:disabled{opacity:.5}
+.hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.hd .btn{width:auto;padding:10px 16px;font-size:14px}
+.pill{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--s2);margin-left:6px}
 </style></head><body>
 <section class="pane on" id="p-w">
  <div class="hero"><div class="hello" id="hello">Nexium</div><div class="total num" id="total">$0.00</div>
@@ -57,6 +62,19 @@ input:focus,select:focus{border-color:var(--blue)}
   <button class="act" data-open="recv"><svg viewBox="0 0 24 24"><path d="M19 5 5 19M15 19H5V9"/></svg>Получить</button>
  </div>
  <h2>Активы</h2><div class="list" id="coins"></div>
+</section>
+<section class="pane" id="p-t">
+ <div class="chipbar" id="pairs"></div>
+ <div class="chart"><div class="px num" id="px">—</div><canvas id="cv" width="680" height="300"></canvas></div>
+ <div class="chipbar" id="secs"></div>
+ <input id="stake" inputmode="decimal" placeholder="Ставка в USDT (от 1)"><div class="sub" id="tbal" style="margin:-4px 4px 12px"></div>
+ <div class="two"><button class="btn up" id="bUp">Вверх · +85%</button><button class="btn dn" id="bDn">Вниз · +85%</button></div>
+ <h2 style="margin-top:20px">Открытые сделки</h2><div class="list" id="open"></div>
+ <h2 style="margin-top:20px">Закрытые</h2><div class="list" id="done"></div>
+</section>
+<section class="pane" id="p-p">
+ <div class="hd"><h2 style="margin:0">P2P-обмен</h2><button class="btn" id="pNew">Создать</button></div>
+ <div class="list" id="offers"></div>
 </section>
 <section class="pane" id="p-h"><h2>История</h2><div class="list" id="hist"></div></section>
 <section class="pane" id="p-a">
@@ -70,7 +88,7 @@ input:focus,select:focus{border-color:var(--blue)}
   <input id="bTo" placeholder="Telegram ID или ID кошелька"><div class="two"><button class="btn" id="bOn" style="background:var(--down)">Забанить</button><button class="btn" id="bOff" style="background:var(--s2)">Разбанить</button></div></div>
  <h2>Пользователи</h2><div class="list" id="aList"></div>
 </section>
-<div class="tabs"><button class="on" data-t="w">Кошелёк</button><button data-t="h">История</button><button data-t="a" id="tabA" hidden>Админ</button></div>
+<div class="tabs"><button class="on" data-t="w">Кошелёк</button><button data-t="t">Трейд</button><button data-t="p">P2P</button><button data-t="h">История</button><button data-t="a" id="tabA" hidden>Админ</button></div>
 
 <div class="sheet" id="sheet"><div class="card" id="card"></div></div><div class="toast" id="toast"></div>
 <script>
@@ -94,7 +112,7 @@ function render(){
  let t=0;$('#coins').innerHTML=Object.keys(C).map(k=>{const b=m.bal[k]||0,p=P[k];t+=b*(p?.p||0);
   return `<div class="row"><div class="ic" style="background:${C[k].c}">${k.slice(0,3)}</div><div class="grow"><b>${k}</b><div class="sub">${p?usd(p.p):'…'} <span class="${p?.d>=0?'up':'down'}">${p?(p.d>=0?'+':'')+p.d.toFixed(2)+'%':''}</span></div></div><div class="r"><b>${amt(b)}</b><div class="sub">${p?usd(b*p.p):''}</div></div></div>`}).join('');
  $('#total').textContent=usd(t);
- const L={in:'Получено',out:'Отправлено',check_in:'Чек активирован',check_out:'Чек списан',admin:'Начисление'};
+ const L={in:'Получено',out:'Отправлено',check_in:'Чек активирован',check_out:'Чек списан',admin:'Начисление',trade_bet:'Ставка',trade_win:'Выигрыш',p2p_buy:'P2P покупка',p2p_sell:'P2P продажа'};
  $('#hist').innerHTML=m.tx.length?m.tx.map(x=>`<div class="row"><div class="grow"><b>${L[x.t]||x.t}</b><div class="sub">${new Date(x.ts).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}${x.w?' · '+x.w:''}</div></div><b class="${x.a>=0?'up':'down'}">${x.a>0?'+':''}${amt(x.a)} ${x.c}</b></div>`).join(''):'<div class="empty">Операций пока нет. Отправь первый перевод или активируй чек.</div>';
 }
 const opts=()=>Object.keys(C).map(k=>`<option>${k}</option>`).join('');
@@ -110,10 +128,10 @@ document.addEventListener('click',async e=>{
  if(e.target.closest('#widBtn')||(e.target.id==='go'&&window.mode==='recv')){navigator.clipboard?.writeText(S.me.wid);toast('ID скопирован');return}
  if(e.target.id==='go'){const a=$('#f2').value,c=$('#f3').value;
   if(window.mode==='send'){const r=await api('send',{to:$('#f1').value,amt:a,cur:c});if(r){close();toast('Отправлено')}}
-  else{const r=await api('mkcheck',{amt:a,cur:c});if(r)sheet(`<h3>Чек готов</h3><div class="chk">${r.link}</div><button class="btn" id="cp">Скопировать</button><button class="btn ghost" id="sh">Поделиться</button>`),window.lk=r.link}return}
+  else{const r=await api('mkcheck',{amt:a,cur:c});if(r)sheet(`<h3>Чек готов</h3><div class="chk">${r.link}</div><button class="btn" id="cp">Скопировать</button><button class="btn ghost" id="sh">Поделиться</button>`),window.lk=r.link,window.lkT='Чек на '+a+' '+c.toUpperCase()}return}
  if(e.target.id==='cp'){navigator.clipboard?.writeText(window.lk);toast('Ссылка скопирована')}
- if(e.target.id==='sh'){tg?tg.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(window.lk)+'&text='+encodeURIComponent('Держи чек')):0}
- const t=e.target.closest('[data-t]');if(t){$$('.tabs button').forEach(b=>b.classList.toggle('on',b===t));$$('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+t.dataset.t));if(t.dataset.t==='a')admin()}
+ if(e.target.id==='sh'){tg?tg.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(window.lk)+'&text='+encodeURIComponent(window.lkT)):0}
+ const t=e.target.closest('[data-t]');if(t){$$('.tabs button').forEach(b=>b.classList.toggle('on',b===t));$$('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+t.dataset.t));if(t.dataset.t==='a')admin();if(t.dataset.t==='p')p2pLoad();if(t.dataset.t==='t')api('settle')}
 });
 async function admin(){const r=await api('a_stats');if(!r)return;
  $('#aN').textContent=r.users.length;$('#aT').textContent=Object.entries(r.tot).map(([k,v])=>amt(v)+' '+k).join(', ')||'пусто';
@@ -124,5 +142,38 @@ $('#gBtn').onclick=()=>done('a_give',{to:$('#gTo').value,amt:$('#gAmt').value,cu
 $('#wBtn').onclick=()=>done('a_setwid',{to:$('#wTo').value,wid:$('#wNew').value});
 $('#bOn').onclick=()=>done('a_ban',{to:$('#bTo').value,on:true});
 $('#bOff').onclick=()=>done('a_ban',{to:$('#bTo').value,on:false});
-api('me');rates();setInterval(rates,45000);
+
+/* ---------- Трейдинг ---------- */
+const PAIR={BTC:'BTCUSDT',ETH:'ETHUSDT',TON:'TONUSDT',SOL:'SOLUSDT'};
+let T={c:'BTC',sec:60,pts:[]};
+const drawChips=()=>{$('#pairs').innerHTML=Object.keys(PAIR).map(k=>`<button class="chip ${k===T.c?'on':''}" data-pair="${k}">${k}/USDT</button>`).join('');
+ $('#secs').innerHTML=[[30,'30 с'],[60,'1 мин'],[300,'5 мин']].map(([s,l])=>`<button class="chip ${s===T.sec?'on':''}" data-sec="${s}">${l}</button>`).join('')};
+document.addEventListener('click',e=>{const p=e.target.closest('[data-pair]'),s=e.target.closest('[data-sec]');
+ if(p){T.c=p.dataset.pair;T.pts=[];drawChips()}if(s){T.sec=+s.dataset.sec;drawChips()}});
+function chart(){const cv=$('#cv'),x=cv.getContext('2d'),w=cv.width,h=cv.height,a=T.pts;x.clearRect(0,0,w,h);if(a.length<2)return;
+ const mn=Math.min(...a),mx=Math.max(...a),r=(mx-mn)||1,X=i=>i/(a.length-1)*w,Y=v=>h-12-(v-mn)/r*(h-40);
+ const up=a[a.length-1]>=a[0],col=up?'#6fe0b4':'#ff7a59',g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,col+'55');g.addColorStop(1,col+'00');
+ x.beginPath();a.forEach((v,i)=>i?x.lineTo(X(i),Y(v)):x.moveTo(X(i),Y(v)));x.strokeStyle=col;x.lineWidth=3;x.lineJoin='round';x.stroke();
+ x.lineTo(w,h);x.lineTo(0,h);x.fillStyle=g;x.fill();x.beginPath();x.arc(w-4,Y(a[a.length-1]),6,0,7);x.fillStyle=col;x.fill()}
+async function tick(){if(!$('#p-t').classList.contains('on'))return;
+ try{const j=await(await fetch('https://api.binance.com/api/v3/ticker/price?symbol='+PAIR[T.c])).json(),v=+j.price;
+ T.pts.push(v);T.pts=T.pts.slice(-70);$('#px').textContent=usd(v);chart()}catch{}}
+const tr=(k,t)=>$(k).onclick=async()=>{const r=await api('trade_open',{coin:T.c,dir:t,amt:$('#stake').value,sec:T.sec});if(r)toast('Сделка открыта')};
+tr('#bUp','up');tr('#bDn','down');
+function rTrade(){const m=S.me;if(!m)return;$('#tbal').textContent='Баланс: '+amt(m.bal.USDT||0)+' USDT · выплата 1.85× за верный прогноз';
+ $('#open').innerHTML=(m.open||[]).length?m.open.map(t=>`<div class="row"><div class="grow"><b>${t.coin} ${t.dir==='up'?'⬆':'⬇'}</b><div class="sub">вход ${usd(t.px)}</div></div><div class="r"><b>${amt(t.st)} USDT</b><div class="sub cd" data-e="${t.exp}"></div></div></div>`).join(''):'<div class="empty">Открытых сделок нет. Выбери пару, время и ставку.</div>';
+ $('#done').innerHTML=(m.done||[]).length?m.done.map(t=>`<div class="row"><div class="grow"><b>${t.coin} ${t.dir==='up'?'⬆':'⬇'}</b><div class="sub">${usd(t.px)} → ${usd(t.cl)}</div></div><b class="${t.r==='win'?'up':t.r==='lose'?'down':''}">${t.r==='win'?'+'+amt(t.pay-t.st):t.r==='lose'?'−'+amt(t.st):'0'} USDT</b></div>`).join(''):'<div class="empty">Пока пусто</div>'}
+const _r=render;render=function(){_r();rTrade()};
+setInterval(()=>{let due=0;$$('.cd').forEach(e=>{const s=Math.ceil((+e.dataset.e-Date.now())/1000);if(s<=0){e.textContent='расчёт…';due=1}else e.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')});
+ if(due&&!window.stl){window.stl=1;api('settle').then(r=>{window.stl=0;if(r&&(r.me.done||[])[0])toast('Сделка закрыта: '+({win:'выигрыш',lose:'проигрыш',tie:'ничья'})[r.me.done[0].r])})}},1000);
+setInterval(tick,2000);drawChips();
+/* ---------- P2P ---------- */
+async function p2pLoad(){const r=await api('p2p_list');if(!r)return;
+ $('#offers').innerHTML=r.offers.length?r.offers.map(o=>{const mine=o.o===S.me.id;return `<div class="row"><div class="grow"><b>${amt(o.sa)} ${o.sc}</b><div class="sub">за ${amt(o.wa)} ${o.wc} · ${o.ow}</div></div><button class="chip on" data-p2p="${mine?'p2p_cancel':'p2p_buy'}" data-id="${o.id}">${mine?'Снять':'Купить'}</button></div>`}).join(''):'<div class="empty">Объявлений нет. Создай первое: выставь монеты и укажи, что хочешь взамен.</div>'}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-p2p]');if(!b)return;
+ const r=await api(b.dataset.p2p,{id:b.dataset.id});if(r){toast(b.dataset.p2p==='p2p_buy'?'Обмен выполнен':'Объявление снято');p2pLoad()}});
+$('#pNew').onclick=()=>{window.mode='p2p';sheet(`<h3>Новое объявление</h3><div class="sub">Отдаёшь (монеты уйдут в залог)</div><div class="two"><input id="f1" inputmode="decimal" placeholder="Сумма"><select id="f2">${opts()}</select></div><div class="sub">Хочешь получить</div><div class="two"><input id="f3" inputmode="decimal" placeholder="Сумма"><select id="f4">${opts()}</select></div><button class="btn" id="goP">Опубликовать</button>`);$('#f4').selectedIndex=3};
+document.addEventListener('click',async e=>{if(e.target.id!=='goP')return;
+ const r=await api('p2p_make',{sa:$('#f1').value,sc:$('#f2').value,wa:$('#f3').value,wc:$('#f4').value});if(r){close();toast('Опубликовано');p2pLoad()}});
+api('settle');rates();setInterval(rates,45000);
 </script></body></html>
