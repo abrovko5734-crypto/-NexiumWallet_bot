@@ -1,5 +1,6 @@
 import { CUR, ADMIN, FEE, R, verify, getUser, save, log, clean, add, makeCheck, PAIRS, PAYOUTS, lastPrice, priceAt, tg, getRates, redeemPromo } from '../lib/core.js';
 
+const STAKE = { 7: 6, 30: 9, 90: 12 }; // дней -> % годовых
 async function find(q) {
   q = String(q || '').trim().toUpperCase();
   if (/^\d+$/.test(q)) return (await R('EXISTS', 'user:' + q)) ? getUser(q) : null;
@@ -99,6 +100,27 @@ export default async function handler(req, res) {
           tg('sendMessage', { chat_id: ow.id, text: `P2P: ${me.wid} купил ${o.sa} ${o.sc}. Вы получили ${o.wa} ${o.wc}` }).catch(() => {});
         } else add(me, o.sc, o.sa);
         await save(me); return ok();
+      }
+      case 'fav': {
+        const c = String(b.coin || '').toUpperCase(); if (!CUR.includes(c)) return fail('Монета не найдена');
+        me.fav = me.fav || []; me.fav = me.fav.includes(c) ? me.fav.filter(x => x !== c) : [...me.fav, c].slice(-12);
+        await save(me); return ok();
+      }
+      case 'stake_open': { // стейкинг (виртуальный): фиксированный APY на срок
+        const days = Number(b.days), apy = STAKE[days];
+        if (!apy || !CUR.includes(cur) || !amt) return fail('Проверь монету, сумму и срок');
+        if ((me.bal[cur] || 0) < amt) return fail('Недостаточно ' + cur);
+        me.stakes = me.stakes || []; if (me.stakes.length >= 10) return fail('Не больше 10 активных стейков');
+        add(me, cur, -amt); log(me, { t: 'stake', c: cur, a: -amt });
+        me.stakes.push({ id: Date.now().toString(36), c: cur, a: amt, apy, d: days, s: Date.now(), e: Date.now() + days * 864e5 });
+        await save(me); return ok({ done: `Стейк ${amt} ${cur} на ${days} дн. · ${apy}% годовых` });
+      }
+      case 'stake_claim': {
+        me.stakes = me.stakes || []; const st = me.stakes.find(x => x.id === b.id); if (!st) return fail('Стейк не найден');
+        const full = Date.now() >= st.e, gain = full ? Math.round(st.a * st.apy / 100 * st.d / 365 * 1e8) / 1e8 : 0;
+        me.stakes = me.stakes.filter(x => x.id !== b.id);
+        add(me, st.c, st.a + gain); log(me, { t: full ? 'stake_win' : 'stake_back', c: st.c, a: st.a + gain }); await save(me);
+        return ok({ done: full ? `+${gain} ${st.c} дохода` : 'Досрочно: возвращено тело без дохода' });
       }
       case 'bonus': {
         const now = Date.now(), last = me.bonus?.t || 0;
