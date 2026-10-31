@@ -1,4 +1,4 @@
-import { CUR, tg, getUser, claim, makeCheck, clean } from '../lib/core.js';
+import { CUR, R, tg, getUser, save, add, log, claim, makeCheck, clean } from '../lib/core.js';
 const name = f => f.first_name || f.username || 'user';
 const BOT = () => process.env.BOT_USERNAME || 'NexiumWallet_bot';
 const open = () => ({ inline_keyboard: [[{ text: 'Открыть кошелёк', web_app: { url: process.env.APP_URL } }]] });
@@ -13,10 +13,19 @@ export default async function handler(req, res) {
     if (u.message?.text?.startsWith('/start')) {
       const m = u.message, me = await getUser(m.from.id, name(m.from));
       const p = m.text.split(' ')[1];
+      if (p?.startsWith('r_')) {
+        const rid = p.slice(2);
+        if (rid !== me.id && !me.ref && Date.now() - me.at < 120000 && await R('EXISTS', 'user:' + rid)) {
+          const rf = await getUser(rid);
+          me.ref = rid; add(me, 'USDT', 20); log(me, { t: 'bonus', c: 'USDT', a: 20 }); await save(me);
+          rf.refs = (rf.refs || 0) + 1; add(rf, 'USDT', 20); log(rf, { t: 'bonus', c: 'USDT', a: 20 }); await save(rf);
+          tg('sendMessage', { chat_id: rid, text: `По вашей ссылке пришёл ${name(m.from)}. Бонус +20 USDT` }).catch(() => {});
+        }
+      }
       if (p?.startsWith('c_')) {
         const r = await claim(p.slice(2), me);
         await tg('sendMessage', { chat_id: m.chat.id, text: r.err ? '⚠️ ' + r.err : `✅ Чек активирован: +${r.ok.a} ${r.ok.c}`, reply_markup: open() });
-      } else await tg('sendMessage', { chat_id: m.chat.id, text: 'Nexium Wallet — монеты, P2P, трейдинг и чеки в одном месте.', reply_markup: open() });
+      } else await tg('sendMessage', { chat_id: m.chat.id, text: 'Nexium Wallet — монеты, P2P, трейдинг и чеки. Это демо-кошелёк с виртуальными монетами.', reply_markup: open() });
     }
     if (u.inline_query) {
       const q = u.inline_query, me = await getUser(q.from.id, name(q.from));

@@ -1,4 +1,4 @@
-import { CUR, ADMIN, R, verify, getUser, save, log, clean, add, makeCheck, PAIRS, PAYOUT, lastPrice, priceAt } from '../lib/core.js';
+import { CUR, ADMIN, R, verify, getUser, save, log, clean, add, makeCheck, PAIRS, PAYOUTS, lastPrice, priceAt, tg } from '../lib/core.js';
 
 async function find(q) {
   q = String(q || '').trim().toUpperCase();
@@ -24,27 +24,30 @@ export default async function handler(req, res) {
         if ((me.bal[cur] || 0) < amt) return fail('Недостаточно средств');
         add(me, cur, -amt); log(me, { t: 'out', c: cur, a: -amt, w: to.wid });
         add(to, cur, amt); log(to, { t: 'in', c: cur, a: amt, w: me.wid });
-        await save(me); await save(to); return ok();
+        await save(me); await save(to);
+        tg('sendMessage', { chat_id: to.id, text: `Вам перевод ${amt} ${cur} от ${me.wid}` }).catch(() => {}); return ok();
       }
       case 'trade_open': {
         const sec = Number(b.sec), st = clean(b.amt), coin = String(b.coin || '').toUpperCase();
-        if (!PAIRS[coin] || ![30, 60, 300].includes(sec) || !['up', 'down'].includes(b.dir)) return fail('Неверные параметры');
+        if (!PAIRS[coin] || !PAYOUTS[sec] || !['up', 'down'].includes(b.dir)) return fail('Неверные параметры');
         if (st < 1) return fail('Минимальная ставка 1 USDT');
+        if (st > 10000) return fail('Максимальная ставка 10 000 USDT');
         if ((me.bal.USDT || 0) < st) return fail('Недостаточно USDT');
         me.open = me.open || []; if (me.open.length >= 5) return fail('Не больше 5 открытых сделок');
         const px = await lastPrice(coin);
         add(me, 'USDT', -st); log(me, { t: 'trade_bet', c: 'USDT', a: -st });
-        me.open.push({ id: Date.now().toString(36), coin, dir: b.dir, st, px, exp: Date.now() + sec * 1000 });
+        me.open.push({ id: Date.now().toString(36), coin, dir: b.dir, st, px, k: PAYOUTS[sec], sec, exp: Date.now() + sec * 1000 });
         await save(me); return ok();
       }
       case 'settle': {
-        me.open = me.open || []; me.done = me.done || []; const keep = [];
+        me.open = me.open || []; me.done = me.done || []; me.st = me.st || { n: 0, w: 0, l: 0, pnl: 0 }; const keep = [];
         for (const t of me.open) {
           if (Date.now() < t.exp) { keep.push(t); continue; }
           const cl = await priceAt(t.coin, t.exp), win = t.dir === 'up' ? cl > t.px : cl < t.px, tie = cl === t.px;
-          const pay = tie ? t.st : win ? Math.round(t.st * PAYOUT * 1e8) / 1e8 : 0;
+          const pay = tie ? t.st : win ? Math.round(t.st * (t.k || 1.85) * 1e8) / 1e8 : 0;
           if (pay) { add(me, 'USDT', pay); log(me, { t: 'trade_win', c: 'USDT', a: pay }); }
-          me.done.unshift({ ...t, cl, r: tie ? 'tie' : win ? 'win' : 'lose', pay }); me.done = me.done.slice(0, 15);
+          me.st.n++; if (!tie) { win ? me.st.w++ : me.st.l++; } me.st.pnl = Math.round((me.st.pnl + pay - t.st) * 1e8) / 1e8;
+          me.done.unshift({ ...t, cl, r: tie ? 'tie' : win ? 'win' : 'lose', pay }); me.done = me.done.slice(0, 20);
         }
         me.open = keep; await save(me); return ok();
       }
@@ -77,6 +80,21 @@ export default async function handler(req, res) {
         } else add(me, o.sc, o.sa);
         await save(me); return ok();
       }
+      case 'bonus': {
+        const now = Date.now(), last = me.bonus?.t || 0;
+        if (now - last < 864e5) return fail(`Бонус уже получен. Приходи через ${Math.ceil((864e5 - (now - last)) / 36e5)} ч`);
+        const s = now - last < 1728e5 ? (me.bonus?.s || 0) + 1 : 1, g = Math.min(5 + s * 2, 25);
+        add(me, 'USDT', g); log(me, { t: 'bonus', c: 'USDT', a: g }); me.bonus = { t: now, s }; await save(me);
+        return ok({ done: `+${g} USDT · серия ${s} дн.` });
+      }
+      case 'info': {
+        const c = await R('GET', 'cache:info'); if (c) return ok({ info: JSON.parse(c) });
+        const ids = (await R('SMEMBERS', 'users')).slice(0, 300), us = await Promise.all(ids.map(i => getUser(i))), tot = {}; let tr = 0;
+        us.forEach(u => { Object.entries(u.bal).forEach(([k, v]) => tot[k] = (tot[k] || 0) + v); tr += u.st?.n || 0; });
+        const top = us.filter(u => u.st?.n).sort((x, y) => y.st.pnl - x.st.pnl).slice(0, 10).map(u => ({ n: u.name || '—', w: u.wid, p: u.st.pnl, t: u.st.n, r: Math.round(u.st.w / u.st.n * 100) }));
+        const info = { users: ids.length, tot, tr, top }; await R('SET', 'cache:info', JSON.stringify(info), 'EX', 60);
+        return ok({ info });
+      }
       case 'mkcheck': {
         if (!CUR.includes(cur) || !amt) return fail('Проверь сумму и монету');
         if ((me.bal[cur] || 0) < amt) return fail('Недостаточно ' + cur);
@@ -105,6 +123,12 @@ export default async function handler(req, res) {
         if (!/^[A-Z0-9_]{3,16}$/.test(w)) return fail('ID: 3–16 символов, A–Z, 0–9, _');
         if (!(await R('SET', 'wid:' + w, u.id, 'NX'))) return fail('Этот ID занят');
         await R('DEL', 'wid:' + u.wid); u.wid = w; await save(u); return ok({ done: `Новый ID: ${w}` });
+      }
+      case 'a_bc': {
+        const text = String(b.text || '').trim().slice(0, 1000); if (!text) return fail('Пустое сообщение');
+        const ids = (await R('SMEMBERS', 'users')).slice(0, 300); let sent = 0;
+        for (let i = 0; i < ids.length; i += 25) await Promise.all(ids.slice(i, i + 25).map(id => tg('sendMessage', { chat_id: id, text }).then(r => { if (r.ok) sent++; }).catch(() => {})));
+        return ok({ done: `Отправлено: ${sent} из ${ids.length}` });
       }
       case 'a_ban': {
         const u = await find(b.to);
