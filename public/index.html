@@ -5,30 +5,34 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#10161f;--card:#1d2633;--card2:#26334a;--blue:#45aef5;--tx:#fff;--mute:#8794a1;--up:#57c778;--down:#ff5f5f}
+:root{--bg:#0d121a;--card:#1a2230;--card2:#26334a;--blue:#45aef5;--tx:#fff;--mute:#8794a1;--up:#57c778;--down:#ff5f5f}
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
 body{background:var(--bg);color:var(--tx);font:15px/1.4 Inter,system-ui,sans-serif;padding:max(14px,env(safe-area-inset-top)) 16px 100px;overflow-x:hidden}
 .num,h1,h2,h3,.tabs button,.btn{font-family:Montserrat,Inter,sans-serif}
-.top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#45aef5,#7b61ff);display:grid;place-items:center;font:700 15px Montserrat}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#45aef5,#7b61ff);display:grid;place-items:center;font:700 15px Montserrat;flex:none}
 .top b{font:600 15px Montserrat}.pill{margin-left:auto;background:var(--card);border:0;color:var(--mute);padding:8px 12px;border-radius:99px;font:500 13px Inter;display:flex;gap:6px}
 .pill b{color:var(--tx);font:600 13px Inter}
-.bal{text-align:center;padding:22px 0 20px}.bal .sub{font-size:14px}
-.total{font:800 40px/1.1 Montserrat;letter-spacing:-.03em;margin-top:6px}
-.acts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:22px}
+.hero{position:relative;overflow:hidden;border-radius:26px;padding:22px 18px 18px;margin-bottom:16px;text-align:center;background:linear-gradient(135deg,#1b4a7a,#2b2f86 60%,#4a2f8a)}
+.hero:before{content:"";position:absolute;width:260px;height:260px;right:-80px;top:-120px;background:radial-gradient(circle,rgba(255,255,255,.22),transparent 65%)}
+.hero .sub{color:rgba(255,255,255,.72)}
+.total{font:800 40px/1.1 Montserrat;letter-spacing:-.03em;margin:6px 0 2px;position:relative}
+.cur{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:14px;position:relative}.cur .chip{background:rgba(255,255,255,.12);color:#fff;padding:6px 13px;font-size:12px}.cur .chip.on{background:#fff;color:#16254a}
+.acts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
 .act{background:var(--card);border:0;color:var(--tx);border-radius:16px;padding:14px 4px 12px;font:500 12.5px Inter;display:flex;flex-direction:column;gap:8px;align-items:center}
 .act svg{width:26px;height:26px;stroke:var(--blue);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .act:active,.btn:active,.chip:active{transform:scale(.96)}
 .sec{font:700 18px Montserrat;margin:4px 2px 12px}
 .list{background:var(--card);border-radius:16px;overflow:hidden;margin-bottom:18px}
-.row{display:flex;align-items:center;gap:12px;padding:13px 16px}.row+.row{border-top:1px solid rgba(255,255,255,.05)}
+.row{display:flex;align-items:center;gap:12px;padding:13px 16px}.row+.row{border-top:1px solid rgba(255,255,255,.05)}.row[data-coin]{cursor:pointer}
 .coin{border-radius:50%;display:grid;place-items:center;flex:none;font:700 17px Montserrat;color:#fff;background:linear-gradient(145deg,var(--c),color-mix(in srgb,var(--c) 70%,#000))}
 .coin svg{width:55%;height:55%}
 .grow{flex:1;min-width:0}.grow b{font-weight:600}.sub{color:var(--mute);font-size:13px}.r{text-align:right}
 .up{color:var(--up)}.down{color:var(--down)}
-.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:rgba(16,22,31,.94);backdrop-filter:blur(16px);border-top:1px solid rgba(255,255,255,.06);padding:8px 6px max(8px,env(safe-area-inset-bottom))}
-.tabs button{flex:1;border:0;background:none;color:var(--mute);font:600 11px Montserrat;display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 0}
-.tabs svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.chg{font:600 12px Inter;padding:3px 8px;border-radius:99px;display:inline-block}.chg.up{background:rgba(87,199,120,.14)}.chg.down{background:rgba(255,95,95,.14)}
+.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:rgba(13,18,26,.94);backdrop-filter:blur(16px);border-top:1px solid rgba(255,255,255,.06);padding:8px 4px max(8px,env(safe-area-inset-bottom));z-index:5}
+.tabs button{flex:1;border:0;background:none;color:var(--mute);font:600 10.5px Montserrat;display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 0}
+.tabs svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .tabs .on{color:var(--blue)}
 .pane{display:none}.pane.on{display:block;animation:in .25s ease}@keyframes in{from{opacity:0;transform:translateY(6px)}}
 .sheet{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;z-index:9}.sheet.show{display:flex}
@@ -55,34 +59,50 @@ input:focus,select:focus{border-color:var(--blue)}
 .box{background:var(--card);border-radius:16px;padding:16px;margin-bottom:14px}.box h3{font:700 15px Montserrat;margin-bottom:12px}
 .hd2{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.hd2 .btn{width:auto;padding:10px 18px;font-size:13px}
 .mini{width:auto;padding:9px 16px;font-size:13px}
-@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-
-.cur{display:flex;gap:6px;justify-content:center;margin-top:12px}.cur .chip{padding:6px 14px;font-size:12px;background:var(--card)}
 .sm{font-size:12.5px;color:var(--mute)}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
 .st{background:var(--card);border-radius:14px;padding:12px 8px;text-align:center}.st b{display:block;font:700 15px Montserrat}.st span{font-size:11.5px;color:var(--mute)}
 .banner{display:flex;align-items:center;gap:12px;background:linear-gradient(120deg,#1d4f7a,#2b3f8f);border-radius:16px;padding:14px 16px;margin-bottom:16px}.banner .grow{font-size:13px}.banner b{font:700 15px Montserrat;display:block}
 .banner .btn{width:auto;padding:10px 16px;font-size:13px;background:#fff;color:#0b2a44}
+.ads{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin-bottom:16px}
+.ad{flex:0 0 88%;scroll-snap-align:start;background:linear-gradient(135deg,#2a2f55,#1d3b5e);border-radius:16px;padding:14px 16px;position:relative}
+.ad:only-child{flex-basis:100%}
+.ad i{position:absolute;right:12px;top:10px;font:500 10px Inter;color:rgba(255,255,255,.5);font-style:normal}
+.ad b{font:700 15px Montserrat;display:block;margin:0 40px 4px 0}.ad p{font-size:13px;color:rgba(255,255,255,.75);margin-bottom:10px}
+.ad button{border:0;background:#fff;color:#0b2a44;padding:8px 16px;border-radius:99px;font:700 13px Montserrat}
 .sbtn{display:flex;gap:6px;margin-bottom:10px}.sbtn .chip{flex:1;padding:8px 0;text-align:center}
 .pay{background:var(--card);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--mute);display:flex;justify-content:space-between}.pay b{color:var(--tx)}
 .mt{display:flex;gap:6px;align-items:center}.mt .chip{padding:6px 12px;font-size:12px}.stat4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 12px 12px}.stat4 div{font-size:11px;color:var(--mute)}.stat4 b{display:block;color:var(--tx);font:600 12px Inter}
 .lead .row .num{width:22px;color:var(--mute);font-weight:700}
 .warn{font-size:12.5px;color:var(--mute);background:var(--card);border-radius:14px;padding:14px;line-height:1.5;margin-bottom:16px}
 textarea{width:100%;background:var(--bg);border:1.5px solid transparent;color:var(--tx);padding:15px;border-radius:14px;font:500 16px Inter;margin-bottom:12px;outline:0;min-height:90px;resize:none}
+.q{background:var(--bg);border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.55}
+.flip{display:grid;place-items:center;margin:-4px 0 8px}.flip button{border:0;background:var(--card2);color:var(--blue);width:38px;height:38px;border-radius:50%;font-size:18px}
+.rng{height:5px;border-radius:9px;background:var(--card2);margin:8px 0 4px;position:relative}.rng i{position:absolute;top:-3px;width:11px;height:11px;border-radius:50%;background:var(--blue);transform:translateX(-50%)}
+.srch{margin-bottom:10px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style></head><body>
 <section class="pane on" id="p-w">
  <div class="top"><div class="av" id="av">N</div><b id="nm">Nexium</b><button class="pill" id="widBtn">ID <b id="wid">…</b></button></div>
- <div class="bal"><div class="sub">Общий баланс</div><div class="total" id="total">0</div><div class="sm" id="btc"></div>
-  <div class="cur" id="curs"></div></div>
- <div id="bn"></div>
+ <div class="hero"><div class="sub">Общий баланс</div><div class="total" id="total">…</div><div class="sub" id="btc"></div><div class="cur" id="curs"></div></div>
  <div class="acts">
   <button class="act" data-a="send"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Отправить</button>
   <button class="act" data-a="recv"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>Получить</button>
+  <button class="act" data-a="swap"><svg viewBox="0 0 24 24"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>Обмен</button>
   <button class="act" data-a="check"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/></svg>Чек</button>
-  <button class="act" data-t="t"><svg viewBox="0 0 24 24"><path d="M4 18l5-6 4 3 7-9M15 6h5v5"/></svg>Трейд</button>
  </div>
- <div class="grid3"><div class="st"><b id="sU">–</b><span>пользователей</span></div><div class="st"><b id="sT">–</b><span>монет в системе</span></div><div class="st"><b id="sD">–</b><span>сделок</span></div></div>
+ <div id="bn"></div>
+ <div class="ads" id="ads"></div>
  <div class="sec">Активы</div><div class="list" id="coins"></div>
- <div class="sec">Последние операции</div><div class="list" id="hist"></div>
+ <div class="hd2"><div class="sec" style="margin:0">Операции</div><button class="chip mini" data-a="hist">Все</button></div>
+ <div class="list" id="hist"></div>
+</section>
+
+<section class="pane" id="p-k">
+ <div class="sec">Рынок</div>
+ <input class="srch" id="mq" placeholder="Поиск монеты" autocomplete="off">
+ <div class="chips" id="ms"></div>
+ <div class="list" id="mkt"></div>
+ <div class="sm" style="text-align:center">Курсы в реальном времени · Binance</div>
 </section>
 
 <section class="pane" id="p-t">
@@ -104,31 +124,42 @@ textarea{width:100%;background:var(--bg);border:1.5px solid transparent;color:va
 <section class="pane" id="p-p">
  <div class="hd2"><div class="sec" style="margin:0">P2P-обмен</div><button class="btn" id="pNew">Создать</button></div>
  <div class="chips" id="pf"></div>
+ <div class="chips" id="po"></div>
  <div class="list" id="offers"></div>
 </section>
 
 <section class="pane" id="p-m">
  <div class="sec">Ещё</div>
- <div id="bn2"></div>
- <div class="box"><h3>Реферальная программа</h3><div class="sm" style="margin-bottom:12px">Приглашай друзей: вы оба получите по 20 USDT. Приглашено: <b id="rc" style="color:#fff">0</b></div><button class="btn" id="refBtn">Скопировать ссылку</button></div>
+ <div class="box"><h3>Реферальная программа</h3><div class="sm" style="margin-bottom:12px">Вы оба получаете по 20 USDT, а за каждые 5 друзей — ещё +50 USDT. Приглашено: <b id="rc" style="color:#fff">0</b></div>
+  <div class="two eq"><button class="btn" id="refShare">Поделиться</button><button class="btn sec2" id="refBtn">Скопировать</button></div></div>
+ <div class="box"><h3>Промокод</h3><input id="pcode" placeholder="Введи код" autocapitalize="characters"><button class="btn" id="pBtn">Активировать</button></div>
  <div class="sec">Топ трейдеров</div><div class="list lead" id="top"></div>
+ <div class="sec">Топ по приглашениям</div><div class="list lead" id="topr"></div>
+ <div class="grid3"><div class="st"><b id="sU">–</b><span>пользователей</span></div><div class="st"><b id="sT">–</b><span>монет в системе</span></div><div class="st"><b id="sD">–</b><span>сделок</span></div></div>
  <div class="sec">Валюта баланса</div><div class="chips" id="curs2"></div>
+ <div id="adv"></div>
  <div class="sec">О проекте</div>
- <div class="warn">Nexium Wallet — демо-кошелёк с <b>виртуальными</b> монетами. Это внутренний учёт, а не блокчейн: монеты не имеют денежной стоимости, их нельзя ввести или вывести. Курсы реальные, сделки на них игровые. Трейд и P2P — развлечение, не инвестиции.</div>
+ <div class="warn">Nexium Wallet — демо-кошелёк с <b>виртуальными</b> монетами. Это внутренний учёт, а не блокчейн: монеты не имеют денежной стоимости, их нельзя ввести или вывести. Курсы реальные, сделки на них игровые. Обмен, трейд и P2P — развлечение, не инвестиции.</div>
 </section>
 
 <section class="pane" id="p-a">
  <div class="sec">Админ-панель</div>
  <div class="box"><div class="sub">Пользователей: <b id="aN" style="color:#fff">–</b></div><div class="sub" style="margin-top:4px">В системе: <span id="aT"></span></div></div>
+ <div class="box"><h3>Реклама в приложении</h3>
+  <input id="adT" placeholder="Заголовок (до 60)"><input id="adX" placeholder="Текст (до 160)"><div class="two"><input id="adU" placeholder="Ссылка https://…"><input id="adB" placeholder="Кнопка"></div><input id="adD" inputmode="numeric" placeholder="Дней показа (пусто — без срока)">
+  <button class="btn" id="adSave">Опубликовать</button><div class="list" id="adList" style="margin:14px 0 0"></div></div>
+ <div class="box"><h3>Рассылка</h3><textarea id="bcT" placeholder="Текст (можно HTML: &lt;b&gt;, &lt;a&gt;)"></textarea><div class="two"><input id="bcB" placeholder="Текст кнопки (необяз.)"><input id="bcU" placeholder="Ссылка кнопки"></div><button class="btn" id="bcBtn">Отправить всем</button></div>
+ <div class="box"><h3>Рекламные ссылки и источники</h3><input id="sTag" placeholder="Метка, например tiktok1"><button class="btn sec2" id="sGen">Получить ссылку</button><div class="list" id="srcList" style="margin:14px 0 0"></div></div>
+ <div class="box"><h3>Промокоды</h3><input id="prC" placeholder="КОД"><div class="two"><input id="prA" inputmode="decimal" placeholder="Сумма"><select id="prK"></select></div><input id="prM" inputmode="numeric" placeholder="Лимит активаций (0 — без лимита)"><button class="btn" id="prBtn">Создать</button><div class="list" id="prList" style="margin:14px 0 0"></div></div>
  <div class="box"><h3>Выдать / списать</h3><input id="gTo" placeholder="Telegram ID или ID кошелька"><div class="two"><input id="gAmt" inputmode="decimal" placeholder="Сумма (−5 списать)"><select id="gCur"></select></div><button class="btn" id="gBtn">Выдать</button></div>
  <div class="box"><h3>Сменить ID кошелька</h3><input id="wTo" placeholder="Telegram ID или текущий ID"><input id="wNew" placeholder="Новый ID, например KELD"><button class="btn" id="wBtn">Сменить</button></div>
- <div class="box"><h3>Рассылка всем</h3><textarea id="bcT" placeholder="Текст сообщения"></textarea><button class="btn" id="bcBtn">Отправить всем</button></div>
  <div class="box"><h3>Блокировка</h3><input id="bTo" placeholder="Telegram ID или ID кошелька"><div class="two eq"><button class="btn rd" id="bOn">Забанить</button><button class="btn sec2" id="bOff">Разбанить</button></div></div>
- <div class="sec">Пользователи</div><div class="list" id="aList"></div>
+ <div class="sec">Пользователи</div><input class="srch" id="aq" placeholder="Поиск по имени или ID"><div class="list" id="aList"></div>
 </section>
 
 <nav class="tabs">
  <button class="on" data-t="w"><svg viewBox="0 0 24 24"><path d="M4 7h15a1 1 0 0 1 1 1v11H5a1 1 0 0 1-1-1zM4 7l12-3v3M16 13h2"/></svg>Кошелёк</button>
+ <button data-t="k"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Рынок</button>
  <button data-t="t"><svg viewBox="0 0 24 24"><path d="M4 18l5-6 4 3 7-9M15 6h5v5"/></svg>Трейд</button>
  <button data-t="p"><svg viewBox="0 0 24 24"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>P2P</button>
  <button data-t="m"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>Ещё</button>
@@ -136,67 +167,98 @@ textarea{width:100%;background:var(--bg);border:1.5px solid transparent;color:va
 </nav>
 <div class="sheet" id="sheet"><div class="card" id="card"></div></div><div class="toast" id="toast"></div>
 <script>
-const tgw=window.Telegram?.WebApp;tgw?.ready();tgw?.expand();tgw?.setHeaderColor?.('#10161f');tgw?.setBackgroundColor?.('#10161f');
+const tgw=window.Telegram?.WebApp;tgw?.ready();tgw?.expand();tgw?.setHeaderColor?.('#0d121a');tgw?.setBackgroundColor?.('#0d121a');
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const BOT='NexiumWallet_bot';
-const C={TON:{c:'#0098ea',n:'Toncoin',id:'the-open-network'},BTC:{c:'#f7931a',n:'Bitcoin',id:'bitcoin'},ETH:{c:'#627eea',n:'Ethereum',id:'ethereum'},USDT:{c:'#26a17b',n:'Tether',id:'tether'},SOL:{c:'#9945ff',n:'Solana',id:'solana'}};
-const X={BNB:'#f3ba2f',XRP:'#3a4a63',DOGE:'#c2a633'};
-const PAIR={BTC:'BTCUSDT',ETH:'ETHUSDT',TON:'TONUSDT',SOL:'SOLUSDT',BNB:'BNBUSDT',XRP:'XRPUSDT',DOGE:'DOGEUSDT'};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hap=t=>{try{tgw?.HapticFeedback?.notificationOccurred(t)}catch{}};
+const BOT='NexiumWallet_bot',FEE=.003;
+const C={TON:{c:'#0098ea',n:'Toncoin'},BTC:{c:'#f7931a',n:'Bitcoin'},ETH:{c:'#627eea',n:'Ethereum'},USDT:{c:'#26a17b',n:'Tether'},SOL:{c:'#9945ff',n:'Solana'},BNB:{c:'#f3ba2f',n:'BNB'},XRP:{c:'#3a4a63',n:'XRP'},DOGE:{c:'#c2a633',n:'Dogecoin'},TRX:{c:'#eb0029',n:'TRON'},LTC:{c:'#345d9d',n:'Litecoin'}};
+const KEYS=Object.keys(C),TRD=KEYS.filter(k=>k!=='USDT');
 const PAYS={30:1.8,60:1.85,300:1.9,900:1.92},SECL={30:'30 сек',60:'1 мин',300:'5 мин',900:'15 мин'};
-const GL={TON:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"><path d="M5 7h14l-7 12z"/><path d="M12 7v12"/></svg>',SOL:'<svg viewBox="0 0 24 24" fill="#fff"><path d="M6 5h14l-2 3H4zM4 10.5h14l2 3H6zM6 16h14l-2 3H4z"/></svg>',BTC:'₿',ETH:'Ξ',USDT:'₮',BNB:'B',XRP:'X',DOGE:'Ð'};
-const ico=(k,s=44)=>`<div class="coin" style="--c:${C[k]?.c||X[k]};width:${s}px;height:${s}px">${GL[k]}</div>`;
-const SY={USD:'$',UAH:'₴',RUB:'₽'};let FX={USD:1,UAH:41.5,RUB:90},CU='USD';
-try{CU=localStorage.getItem('nx_cu')||'USD'}catch{}
-let S={me:null,admin:false,info:null},P={},mode='',LK='',LP={};
+const GL={TON:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"><path d="M5 7h14l-7 12z"/><path d="M12 7v12"/></svg>',SOL:'<svg viewBox="0 0 24 24" fill="#fff"><path d="M6 5h14l-2 3H4zM4 10.5h14l2 3H6zM6 16h14l-2 3H4z"/></svg>',BTC:'₿',ETH:'Ξ',USDT:'₮',BNB:'B',XRP:'X',DOGE:'Ð',TRX:'T',LTC:'Ł'};
+const ico=(k,s=44)=>`<div class="coin" style="--c:${C[k]?.c};width:${s}px;height:${s}px">${GL[k]}</div>`;
+const SY={USD:'$',EUR:'€',UAH:'₴',RUB:'₽',KZT:'₸',PLN:'zł',TRY:'₺'};let FX={USD:1,EUR:.92,UAH:41.5,RUB:90,KZT:480,PLN:4,TRY:34},CU='USD';
+try{CU=localStorage.getItem('nx_cu')||'USD';if(!SY[CU])CU='USD'}catch{}
+let S={me:null,admin:false,info:null,ads:[]},P={USDT:{p:1,d:0}},mode='',LK='',MQ='',MS='top',PF='ALL',PO='new',OFF=[],AQ='',AU=[];
 let T={c:'BTC',sec:60,iv:'1m',kind:'candle',pts:[],k:[]};
 const fm=v=>{const x=v*FX[CU];return SY[CU]+x.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:Math.abs(x)<1?4:2})};
 const usd=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:n<1?4:2});
 const amt=n=>(+n).toLocaleString('ru-RU',{maximumFractionDigits:8});
-const opts=(sel='')=>Object.keys(C).map(k=>`<option ${k===sel?'selected':''}>${k}</option>`).join('');
-function toast(t,bad){const e=$('#toast');e.textContent=t;e.className='toast show'+(bad?' bad':'');clearTimeout(toast.t);toast.t=setTimeout(()=>e.className='toast',2600)}
+const pct=d=>`<span class="chg ${d>=0?'up':'down'}">${d>=0?'+':''}${d.toFixed(2)}%</span>`;
+const opts=(sel='')=>KEYS.map(k=>`<option ${k===sel?'selected':''}>${k}</option>`).join('');
+function toast(t,bad){const e=$('#toast');e.textContent=t;e.className='toast show'+(bad?' bad':'');clearTimeout(toast.t);toast.t=setTimeout(()=>e.className='toast',2600);hap(bad?'error':'success')}
 async function api(action,d={}){
  try{const r=await fetch('/api/app',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:tgw?.initData||'',action,...d})});
  const j=await r.json();if(!r.ok){toast(j.err||'Ошибка',1);return null}
- if(j.info)S.info=j.info;if(j.me){S.me=j.me;S.admin=j.isAdmin}render();return j}catch{toast('Нет связи с сервером',1)}}
-async function rates(){try{const ids=Object.values(C).map(x=>x.id).join(',');
- const j=await(await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`)).json();
- for(const k in C){const x=j[C[k].id];if(x)P[k]={p:x.usd,d:x.usd_24h_change||0}}P.USDT=P.USDT||{p:1,d:0};render()}catch{}
- try{const j=await(await fetch('https://open.er-api.com/v6/latest/USD')).json();if(j.rates){FX.UAH=j.rates.UAH;FX.RUB=j.rates.RUB;render()}}catch{}}
-const TYPE={in:['Получено','↓'],out:['Отправлено','↑'],check_in:['Чек активирован','↓'],check_out:['Чек списан','↑'],admin:['Начисление','★'],trade_bet:['Ставка','▲'],trade_win:['Выигрыш','★'],p2p_buy:['P2P покупка','⇄'],p2p_sell:['P2P продажа','⇄'],bonus:['Бонус','🎁']};
-const curChips=()=>['USD','UAH','RUB'].map(k=>`<button class="chip ${k===CU?'on':''}" data-cu="${k}">${SY[k]} ${k}</button>`).join('');
+ if(j.info)S.info=j.info;if(j.ads&&action==='ad_list')S.ads=j.ads;if(j.me){S.me=j.me;S.admin=j.isAdmin}render();return j}catch{toast('Нет связи с сервером',1)}}
+async function rates(){
+ try{const j=await(await fetch('/api/rates')).json();if(j.p){P=j.p;if(j.fx)FX={...FX,...j.fx};
+  const v=P[T.c]?.p;if(v&&$('#p-t').classList.contains('on')){T.pts.push(v);T.pts=T.pts.slice(-80);if(T.kind==='candle'&&T.k.length){const l=T.k[T.k.length-1];l[3]=v;l[1]=Math.max(l[1],v);l[2]=Math.min(l[2],v)}chart()}render()}}catch{}
+ setTimeout(rates,$('#p-t').classList.contains('on')?2500:7000)}
+const TYPE={in:['Получено','↓'],out:['Отправлено','↑'],check_in:['Чек активирован','↓'],check_out:['Чек списан','↑'],admin:['Начисление','★'],trade_bet:['Ставка','▲'],trade_win:['Выигрыш','★'],p2p_buy:['P2P покупка','⇄'],p2p_sell:['P2P продажа','⇄'],bonus:['Бонус','🎁'],swap_in:['Обмен (получено)','⇄'],swap_out:['Обмен (списано)','⇄'],promo:['Промокод','🎟']};
+const curChips=()=>Object.keys(SY).map(k=>`<button class="chip ${k===CU?'on':''}" data-cu="${k}">${SY[k]} ${k}</button>`).join('');
+const txRow=x=>{const L=TYPE[x.t]||[x.t,'•'];return `<div class="row"><div class="coin" style="--c:${x.a>=0?'#2f8f55':'#55627a'};width:40px;height:40px">${L[1]}</div><div class="grow"><b>${L[0]}</b><div class="sub">${new Date(x.ts).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}${x.w?' · '+esc(x.w):''}</div></div><b class="${x.a>=0?'up':'down'}">${x.a>0?'+':''}${amt(x.a)} ${x.c}</b></div>`};
 function render(){const m=S.me;if(!m)return;
  $('#nm').textContent=m.name||'Кошелёк';$('#av').textContent=(m.name||'N')[0].toUpperCase();$('#wid').textContent=m.wid;$('#tabA').hidden=!S.admin;
- let t=0;$('#coins').innerHTML=Object.keys(C).map(k=>{const b=m.bal[k]||0,p=P[k];t+=b*(p?.p||0);
-  return `<div class="row">${ico(k)}<div class="grow"><b>${C[k].n}</b><div class="sub">${p?fm(p.p):'…'} <span class="${p?.d>=0?'up':'down'}">${p?(p.d>=0?'+':'')+p.d.toFixed(2)+'%':''}</span></div></div><div class="r"><b>${amt(b)} ${k}</b><div class="sub">${p?fm(b*p.p):''}</div></div></div>`}).join('');
- $('#total').textContent=fm(t);$('#btc').textContent=P.BTC?'≈ '+(t/P.BTC.p).toFixed(6)+' BTC':'';
+ let t=0,t0=0;$('#coins').innerHTML=KEYS.map(k=>{const b=m.bal[k]||0,p=P[k];if(p){t+=b*p.p;t0+=b*p.p/(1+p.d/100)}
+  return `<div class="row" data-coin="${k}">${ico(k)}<div class="grow"><b>${C[k].n}</b><div class="sub">${p?fm(p.p):'…'} ${p&&k!=='USDT'?pct(p.d):''}</div></div><div class="r"><b>${amt(b)} ${k}</b><div class="sub">${p?fm(b*p.p):''}</div></div></div>`}).join('');
+ $('#total').textContent=Object.keys(P).length>1?fm(t):'…';
+ $('#btc').innerHTML=P.BTC?`≈ ${(t/P.BTC.p).toFixed(6)} BTC`+(t0>0?` · ${t/t0-1>=0?'▲':'▼'} ${Math.abs((t/t0-1)*100).toFixed(2)}% за 24ч`:''):'';
  $('#curs').innerHTML=curChips();$('#curs2').innerHTML=curChips();
- const ok=Date.now()-(m.bonus?.t||0)>=864e5,bh=ok?`<div class="banner"><div class="grow"><b>Ежедневный бонус</b>Серия ${m.bonus?.s||0} дн. — чем дольше, тем больше</div><button class="btn" id="bonusBtn">Забрать</button></div>`:'';
- $('#bn').innerHTML=bh;$('#bn2').innerHTML=bh;
+ const ok=Date.now()-(m.bonus?.t||0)>=864e5;
+ $('#bn').innerHTML=ok?`<div class="banner"><div class="grow"><b>Ежедневный бонус</b>Серия ${m.bonus?.s||0} дн. — чем дольше, тем больше</div><button class="btn" id="bonusBtn">Забрать</button></div>`:'';
+ $('#ads').innerHTML=S.ads.map(a=>`<div class="ad"><i>Реклама</i><b>${esc(a.title)}</b><p>${esc(a.text)}</p><button data-ad="${esc(a.id)}">${esc(a.btn)}</button></div>`).join('');
  if(S.info){const i=S.info;let v=0;for(const k in i.tot)v+=i.tot[k]*(P[k]?.p||0);$('#sU').textContent=i.users;$('#sT').textContent=fm(v);$('#sD').textContent=i.tr;
-  $('#top').innerHTML=i.top.length?i.top.map((u,n)=>`<div class="row"><div class="num">${n+1}</div><div class="grow"><b>${u.n}</b><div class="sub">${u.t} сделок · ${u.r}% побед</div></div><b class="${u.p>=0?'up':'down'}">${u.p>=0?'+':''}${amt(u.p)}</b></div>`).join(''):'<div class="empty">Пока никто не торговал. Стань первым!</div>'}
+  $('#top').innerHTML=i.top.length?i.top.map((u,n)=>`<div class="row"><div class="num">${n+1}</div><div class="grow"><b>${esc(u.n)}</b><div class="sub">${u.t} сделок · ${u.r}% побед</div></div><b class="${u.p>=0?'up':'down'}">${u.p>=0?'+':''}${amt(u.p)}</b></div>`).join(''):'<div class="empty">Пока никто не торговал. Стань первым!</div>';
+  $('#topr').innerHTML=(i.refs||[]).length?i.refs.map((u,n)=>`<div class="row"><div class="num">${n+1}</div><div class="grow"><b>${esc(u.n)}</b></div><b>${u.r} 👥</b></div>`).join(''):'<div class="empty">Пока никого не пригласили</div>';
+  $('#adv').innerHTML=i.contact?`<div class="box"><h3>Реклама в Nexium</h3><div class="sm" style="margin-bottom:12px">Разместим ваш баннер в кошельке или сделаем рассылку по пользователям.</div><button class="btn sec2" data-link="https://t.me/${esc(i.contact)}">Связаться</button></div>`:''}
  $('#rc').textContent=m.refs||0;
- $('#hist').innerHTML=m.tx.length?m.tx.slice(0,10).map(x=>{const L=TYPE[x.t]||[x.t,'•'];return `<div class="row"><div class="coin" style="--c:${x.a>=0?'#2f8f55':'#55627a'};width:40px;height:40px">${L[1]}</div><div class="grow"><b>${L[0]}</b><div class="sub">${new Date(x.ts).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}${x.w?' · '+x.w:''}</div></div><b class="${x.a>=0?'up':'down'}">${x.a>0?'+':''}${amt(x.a)} ${x.c}</b></div>`}).join(''):'<div class="empty">Операций пока нет. Забери бонус и попробуй трейд!</div>';
+ $('#hist').innerHTML=m.tx.length?m.tx.slice(0,6).map(txRow).join(''):'<div class="empty">Операций пока нет. Забери бонус и попробуй обмен или трейд!</div>';
+ mkt();
  const st=m.st||{n:0,w:0,pnl:0};$('#tN').textContent=st.n;$('#tW').textContent=st.n?Math.round(st.w/st.n*100)+'%':'0%';$('#tP').textContent=(st.pnl>=0?'+':'')+amt(st.pnl);$('#tP').className=st.pnl>=0?'up':'down';
  $('#tb').textContent=amt(m.bal.USDT||0);payPrev();
- $('#open').innerHTML=(m.open||[]).length?m.open.map(t=>{const l=LP[t.coin],w=l?(t.dir==='up'?l>t.px:l<t.px):null;return `<div class="row">${ico(t.coin,40)}<div class="grow"><b>${t.coin} ${t.dir==='up'?'<span class="up">▲</span>':'<span class="down">▼</span>'} <span class="sm">${SECL[t.sec]||''}</span></b><div class="sub">вход ${usd(t.px)}${l?' · сейчас '+usd(l):''}</div></div><div class="r"><b class="${w===null?'':w?'up':'down'}">${amt(t.st)} USDT</b><div class="sub cd" data-e="${t.exp}"></div></div></div>`}).join(''):'<div class="empty">Открытых сделок нет</div>';
+ $('#open').innerHTML=(m.open||[]).length?m.open.map(t=>{const l=P[t.coin]?.p,w=l?(t.dir==='up'?l>t.px:l<t.px):null;return `<div class="row">${ico(t.coin,40)}<div class="grow"><b>${t.coin} ${t.dir==='up'?'<span class="up">▲</span>':'<span class="down">▼</span>'} <span class="sm">${SECL[t.sec]||''}</span></b><div class="sub">вход ${usd(t.px)}${l?' · сейчас '+usd(l):''}</div></div><div class="r"><b class="${w===null?'':w?'up':'down'}">${amt(t.st)} USDT</b><div class="sub cd" data-e="${t.exp}"></div></div></div>`}).join(''):'<div class="empty">Открытых сделок нет</div>';
  $('#done').innerHTML=(m.done||[]).length?m.done.map(t=>`<div class="row">${ico(t.coin,40)}<div class="grow"><b>${t.coin} ${t.dir==='up'?'▲':'▼'}</b><div class="sub">${usd(t.px)} → ${usd(t.cl)}</div></div><b class="${t.r==='win'?'up':t.r==='lose'?'down':''}">${t.r==='win'?'+'+amt(t.pay-t.st):t.r==='lose'?'−'+amt(t.st):'0'} USDT</b></div>`).join(''):'<div class="empty">Пока пусто</div>'}
+function mkt(){
+ $('#ms').innerHTML=[['top','Все'],['up','Рост'],['down','Падение'],['vol','Объём']].map(([k,l])=>`<button class="chip ${MS===k?'on':''}" data-ms="${k}">${l}</button>`).join('');
+ let l=KEYS.filter(k=>P[k]&&(C[k].n+k).toLowerCase().includes(MQ.toLowerCase()));
+ if(MS==='up')l.sort((a,b)=>P[b].d-P[a].d);if(MS==='down')l.sort((a,b)=>P[a].d-P[b].d);if(MS==='vol')l.sort((a,b)=>(P[b].v||0)-(P[a].v||0));
+ $('#mkt').innerHTML=l.length?l.map(k=>{const p=P[k],pos=p.h>p.l?Math.min(100,Math.max(0,(p.p-p.l)/(p.h-p.l)*100)):50;
+  return `<div class="row" data-coin="${k}">${ico(k,40)}<div class="grow"><b>${k}</b><div class="sub">${C[k].n}</div>${k!=='USDT'&&p.h>p.l?`<div class="rng"><i style="left:${pos}%"></i></div>`:''}</div><div class="r"><b>${usd(p.p)}</b><div>${k==='USDT'?'':pct(p.d)}</div></div></div>`}).join(''):'<div class="empty">Загружаю курсы…</div>'}
 function sheet(h){$('#card').innerHTML='<div class="grab"></div>'+h;$('#sheet').classList.add('show')}
 const shut=()=>$('#sheet').classList.remove('show');
 $('#sheet').onclick=e=>{if(e.target.id==='sheet')shut()};
+function coinSheet(k){const p=P[k]||{p:0,d:0,h:0,l:0},b=S.me.bal[k]||0;mode='';
+ sheet(`<div style="text-align:center">${ico(k,60)}<h3 style="margin:10px 0 2px">${C[k].n}</h3><div class="px">${usd(p.p)}</div>${k==='USDT'?'':pct(p.d)}</div>
+ ${k==='USDT'?'':`<div class="grid3" style="margin:16px 0 8px"><div class="st"><b>${usd(p.h)}</b><span>макс 24ч</span></div><div class="st"><b>${usd(p.l)}</b><span>мин 24ч</span></div><div class="st"><b>${(p.v/1e6).toFixed(1)}M</b><span>объём</span></div></div>`}
+ <div class="pay" style="margin-top:14px"><span>Твой баланс</span><b>${amt(b)} ${k} · ${fm(b*p.p)}</b></div>
+ <div class="two eq"><button class="btn" data-cs="swap" data-k="${k}">Обменять</button><button class="btn sec2" data-cs="send" data-k="${k}">Отправить</button></div>
+ ${PAIRS_OK(k)?`<button class="btn sec2" style="margin-top:10px" data-cs="trade" data-k="${k}">Торговать ${k}/USDT</button>`:''}`)}
+const PAIRS_OK=k=>TRD.includes(k);
+function swapSheet(f='USDT',t='TON'){mode='swap';if(f===t)t=f==='USDT'?'TON':'USDT';
+ sheet(`<h3>Обмен</h3><div class="lbl">Отдаю</div><div class="two"><input id="sa" inputmode="decimal" placeholder="0"><select id="sf">${opts(f)}</select></div><div class="sbtn"><button class="chip" data-sq="25">25%</button><button class="chip" data-sq="50">50%</button><button class="chip" data-sq="100">MAX</button></div>
+ <div class="flip"><button id="flip">⇅</button></div><div class="lbl">Получаю</div><select id="st">${opts(t)}</select><div class="q" id="sq"></div><button class="btn" id="go">Обменять</button>`);quote()}
+function quote(){const el=$('#sq');if(!el)return;const f=$('#sf').value,t=$('#st').value,a=+String($('#sa').value).replace(',','.')||0;
+ if(!P[f]||!P[t]){el.textContent='Курс загружается…';return}const r=P[f].p/P[t].p;
+ el.innerHTML=`Курс: 1 ${f} = <b>${amt(+r.toPrecision(6))} ${t}</b>`+(a?`<br>Получишь ≈ <b>${amt(Math.round(a*r*(1-FEE)*1e8)/1e8)} ${t}</b>`:'')+`<br><span class="sm">Комиссия 0.3% · баланс ${amt(S.me.bal[f]||0)} ${f}</span>`}
 const forms={
- send:()=>{mode='send';sheet(`<h3>Отправить</h3><div class="lbl">ID кошелька получателя</div><input id="f1" placeholder="NX1234567" autocapitalize="characters"><div class="lbl">Сумма и монета</div><div class="two"><input id="f2" inputmode="decimal" placeholder="0"><select id="f3">${opts('TON')}</select></div><button class="btn" id="go">Отправить</button>`)},
+ send:(c='TON')=>{mode='send';sheet(`<h3>Отправить</h3><div class="lbl">ID кошелька получателя</div><input id="f1" placeholder="NX1234567" autocapitalize="characters"><div class="lbl">Сумма и монета</div><div class="two"><input id="f2" inputmode="decimal" placeholder="0"><select id="f3">${opts(c)}</select></div><button class="btn" id="go">Отправить</button>`)},
  check:()=>{mode='check';sheet(`<h3>Создать чек</h3><div class="two"><input id="f2" inputmode="decimal" placeholder="Сумма"><select id="f3">${opts('USDT')}</select></div><button class="btn" id="go">Создать</button><div class="sub" style="margin-top:14px;text-align:center">Монеты спишутся с твоего баланса, когда чек заберут. В чате: <b style="color:#fff">@${BOT} 1 TON</b></div>`)},
- recv:()=>{mode='recv';sheet(`<h3>Получить</h3><div class="lbl" style="text-align:center">Твой ID кошелька</div><div class="chk num" style="font-size:24px;text-align:center">${S.me.wid}</div><button class="btn" id="go">Скопировать ID</button>`)}};
+ recv:()=>{mode='recv';sheet(`<h3>Получить</h3><div class="lbl" style="text-align:center">Твой ID кошелька</div><div class="chk num" style="font-size:24px;text-align:center">${esc(S.me.wid)}</div><button class="btn" id="go">Скопировать ID</button>`)},
+ swap:()=>swapSheet(),
+ hist:()=>histSheet('all')};
+function histSheet(f){mode='';const L=S.me.tx.filter(x=>f==='all'||(f==='in'&&x.a>0)||(f==='out'&&x.a<0)||(f==='trade'&&x.t.startsWith('trade'))||(f==='swap'&&(x.t.startsWith('swap')||x.t.startsWith('p2p'))));
+ sheet(`<h3>История</h3><div class="chips">${[['all','Все'],['in','Приход'],['out','Расход'],['trade','Трейд'],['swap','Обмен']].map(([k,l])=>`<button class="chip ${f===k?'on':''}" data-hf="${k}">${l}</button>`).join('')}</div><div class="list" style="margin:0">${L.length?L.map(txRow).join(''):'<div class="empty">Пусто</div>'}</div>`)}
 function go(t){$$('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));$$('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+t));scrollTo(0,0);
- if(t==='a')admin();if(t==='p')p2pLoad();if(t==='m')api('info');if(t==='t'){api('settle');T.k=[];tick()}}
+ if(t==='a')admin();if(t==='p')p2pLoad();if(t==='m')api('info');if(t==='w')api('ad_list');if(t==='t'){api('settle');T.k=[];T.pts=[];drawChips();loadK()}}
 
 /* ---------- Трейд ---------- */
-const drawChips=()=>{$('#pairs').innerHTML=Object.keys(PAIR).map(k=>`<button class="chip ${k===T.c?'on':''}" data-pair="${k}">${k}/USDT</button>`).join('');
+const drawChips=()=>{$('#pairs').innerHTML=TRD.map(k=>`<button class="chip ${k===T.c?'on':''}" data-pair="${k}">${k}/USDT</button>`).join('');
  $('#secs').innerHTML=Object.keys(PAYS).map(s=>`<button class="chip ${+s===T.sec?'on':''}" data-sec="${s}">${SECL[s]} · ${Math.round((PAYS[s]-1)*100)}%</button>`).join('');
  $('#ctl').innerHTML=[['candle','Свечи'],['line','Линия']].map(([k,l])=>`<button class="chip ${T.kind===k?'on':''}" data-kind="${k}">${l}</button>`).join('')+(T.kind==='candle'?['1m','5m','15m'].map(i=>`<button class="chip ${T.iv===i?'on':''}" data-iv="${i}">${i}</button>`).join(''):'');
  $('#qs').innerHTML=[1,5,10,50,'MAX'].map(v=>`<button class="chip" data-q="${v}">${v}</button>`).join('');payPrev()};
 function payPrev(){const s=+String($('#stake')?.value||0).replace(',','.')||0;$('#pp').textContent=s?'+'+amt(s*(PAYS[T.sec]-1))+' USDT':'×'+PAYS[T.sec]}
-function chart(){const cv=$('#cv'),d=devicePixelRatio||1,w=cv.clientWidth*d,h=cv.clientHeight*d;if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}
+function chart(){const cv=$('#cv'),d=devicePixelRatio||1,w=cv.clientWidth*d,h=cv.clientHeight*d;if(!w)return;if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}
  const x=cv.getContext('2d');x.clearRect(0,0,w,h);const cd=T.kind==='candle'&&T.k.length>3,a=cd?T.k.flatMap(k=>[k[1],k[2]]):T.pts;if(a.length<2)return;
  const en=(S.me?.open||[]).filter(t=>t.coin===T.c);let mn=Math.min(...a,...en.map(t=>t.px)),mx=Math.max(...a,...en.map(t=>t.px));const r=(mx-mn)||1,pd=14*d,Y=v=>h-pd-(v-mn)/r*(h-pd*2.4);
  const last=cd?T.k[T.k.length-1][3]:T.pts[T.pts.length-1],first=cd?T.k[0][0]:T.pts[0],up=last>=first,col=up?'#57c778':'#ff5f5f';
@@ -208,64 +270,86 @@ function chart(){const cv=$('#cv'),d=devicePixelRatio||1,w=cv.clientWidth*d,h=cv
   const lx=X(n-1),ly=Y(last);x.lineTo(lx,h);x.lineTo(0,h);x.fillStyle=g;x.fill();x.beginPath();x.arc(lx,ly,5*d,0,7);x.fillStyle=col;x.fill();x.beginPath();x.arc(lx,ly,10*d,0,7);x.fillStyle=col+'33';x.fill()}
  x.setLineDash([6*d,5*d]);x.lineWidth=1.4*d;x.strokeStyle=col;x.beginPath();x.moveTo(0,Y(last));x.lineTo(w,Y(last));x.globalAlpha=.55;x.stroke();x.globalAlpha=1;
  en.forEach(t=>{x.strokeStyle='#45aef5';x.beginPath();x.moveTo(0,Y(t.px));x.lineTo(w,Y(t.px));x.stroke();x.fillStyle='#45aef5';x.font=`600 ${11*d}px Inter`;x.fillText('вход '+(t.dir==='up'?'▲':'▼'),6*d,Y(t.px)-5*d)});x.setLineDash([]);
- $('#px').textContent=usd(last);$('#pc').innerHTML=`<span class="${up?'up':'down'}">${up?'+':''}${((last/first-1)*100).toFixed(3)}%</span> <span class="sm">за период</span>`}
-const B='https://api.binance.com/api/v3/';
-async function tick(){if(!$('#p-t').classList.contains('on'))return;
- try{const syms=[...new Set([PAIR[T.c],...(S.me?.open||[]).map(t=>PAIR[t.coin])])],j=await(await fetch(B+'ticker/price?symbols='+encodeURIComponent(JSON.stringify(syms)))).json();
-  j.forEach(p=>{const k=Object.keys(PAIR).find(c=>PAIR[c]===p.symbol);LP[k]=+p.price});const v=LP[T.c];if(v){T.pts.push(v);T.pts=T.pts.slice(-80);
-  if(T.kind==='candle'&&T.k.length){const l=T.k[T.k.length-1];l[3]=v;l[1]=Math.max(l[1],v);l[2]=Math.min(l[2],v)}}chart();render()}catch{}}
+ $('#px').textContent=usd(P[T.c]?.p||last);$('#pc').innerHTML=`<span class="${up?'up':'down'}">${up?'+':''}${((last/first-1)*100).toFixed(3)}%</span> <span class="sm">за период</span>`;
+ const p=P[T.c];if(p){$('#hh').textContent=usd(p.h);$('#ll').textContent=usd(p.l);$('#cc').innerHTML=`<span class="${p.d>=0?'up':'down'}">${p.d>=0?'+':''}${p.d.toFixed(2)}%</span>`;$('#vv').textContent=(p.v/1e6).toFixed(1)+'M'}}
 async function loadK(){if(!$('#p-t').classList.contains('on'))return;
- try{const c=T.c,j=await(await fetch(`${B}klines?symbol=${PAIR[c]}&interval=${T.iv}&limit=50`)).json();if(c===T.c)T.k=j.map(k=>[+k[1],+k[2],+k[3],+k[4]]);chart()}catch{}
- try{const j=await(await fetch(B+'ticker/24hr?symbol='+PAIR[T.c])).json();$('#hh').textContent=usd(+j.highPrice);$('#ll').textContent=usd(+j.lowPrice);
-  const p=+j.priceChangePercent;$('#cc').innerHTML=`<span class="${p>=0?'up':'down'}">${p>=0?'+':''}${p.toFixed(2)}%</span>`;$('#vv').textContent=(+j.quoteVolume/1e6).toFixed(1)+'M'}catch{}}
+ try{const c=T.c,iv=T.iv,j=await(await fetch(`/api/rates?kl=${c}&iv=${iv}`)).json();if(c===T.c&&iv===T.iv&&j.k)T.k=j.k;chart()}catch{}}
 async function trade(dir){const r=await api('trade_open',{coin:T.c,dir,amt:$('#stake').value,sec:T.sec});if(r)toast('Сделка открыта')}
 
 /* ---------- P2P ---------- */
-let PF='ALL',OFF=[];
-function p2pDraw(){$('#pf').innerHTML=['ALL',...Object.keys(C)].map(k=>`<button class="chip ${PF===k?'on':''}" data-pf="${k}">${k==='ALL'?'Все':k}</button>`).join('');
- const l=OFF.filter(o=>PF==='ALL'||o.sc===PF);
- $('#offers').innerHTML=l.length?l.map(o=>{const mine=o.o===S.me.id,rt=o.wa/o.sa;return `<div class="row">${ico(o.sc,40)}<div class="grow"><b>${amt(o.sa)} ${o.sc}</b><div class="sub">за ${amt(o.wa)} ${o.wc} · 1 ${o.sc} = ${amt(+rt.toPrecision(5))} ${o.wc}<br>${o.ow}</div></div><button class="chip on mini" data-p2p="${mine?'p2p_cancel':'p2p_buy'}" data-id="${o.id}">${mine?'Снять':'Купить'}</button></div>`}).join(''):'<div class="empty">Объявлений нет. Создай первое: выставь монеты и укажи, что хочешь взамен.</div>'}
+const mk=o=>P[o.sc]&&P[o.wc]?P[o.sc].p/P[o.wc].p:0;
+function p2pDraw(){$('#pf').innerHTML=['ALL',...KEYS].map(k=>`<button class="chip ${PF===k?'on':''}" data-pf="${k}">${k==='ALL'?'Все':k}</button>`).join('');
+ $('#po').innerHTML=[['new','Новые'],['best','Выгодные']].map(([k,l])=>`<button class="chip ${PO===k?'on':''}" data-po="${k}">${l}</button>`).join('');
+ const dev=o=>{const m=mk(o);return m?(o.wa/o.sa/m-1)*100:0};
+ const l=OFF.filter(o=>PF==='ALL'||o.sc===PF);if(PO==='best')l.sort((a,b)=>dev(a)-dev(b));
+ $('#offers').innerHTML=l.length?l.map(o=>{const mine=o.o===S.me.id,rt=o.wa/o.sa,d=dev(o);return `<div class="row">${ico(o.sc,40)}<div class="grow"><b>${amt(o.sa)} ${o.sc}</b><div class="sub">за ${amt(o.wa)} ${o.wc} · 1 ${o.sc} = ${amt(+rt.toPrecision(5))} ${o.wc}</div><div class="sub">${esc(o.ow)} · <span class="${d<=0?'up':'down'}">${d>0?'+':''}${d.toFixed(1)}% к рынку</span></div></div><button class="chip on mini" data-p2p="${mine?'p2p_cancel':'p2p_buy'}" data-id="${esc(o.id)}">${mine?'Снять':'Купить'}</button></div>`}).join(''):'<div class="empty">Объявлений нет. Создай первое: выставь монеты и укажи, что хочешь взамен.</div>'}
 async function p2pLoad(){const r=await api('p2p_list');if(!r)return;OFF=r.offers;p2pDraw()}
+function p2pQuote(){const sa=+String($('#f1').value).replace(',','.')||0,sc=$('#f2').value,wc=$('#f4').value;const el=$('#pq');if(!el)return;
+ el.innerHTML=P[sc]&&P[wc]?`Рыночный курс: 1 ${sc} = <b>${amt(+(P[sc].p/P[wc].p).toPrecision(6))} ${wc}</b>`+(sa?`<br>По рынку: <b>${amt(+(sa*P[sc].p/P[wc].p).toPrecision(6))} ${wc}</b>`:''):'Курс загружается…'}
 
 /* ---------- Админ ---------- */
-async function admin(){const r=await api('a_stats');if(!r)return;
- $('#aN').textContent=r.users.length;$('#aT').textContent=Object.entries(r.tot).map(([k,v])=>amt(v)+' '+k).join(', ')||'пусто';
- $('#aList').innerHTML=r.users.map(u=>`<div class="row"><div class="av" style="width:38px;height:38px">${(u.name||'?')[0].toUpperCase()}</div><div class="grow"><b>${u.name||'—'}</b>${u.banned?'<span class="tag">бан</span>':''}<div class="sub">${u.wid} · tg ${u.id}</div></div><div class="r sub">${Object.entries(u.bal).filter(x=>x[1]).map(([k,v])=>amt(v)+' '+k).join('<br>')}</div></div>`).join('')}
-const done=async(a,d)=>{const r=await api(a,d);if(r){toast(r.done||'Готово');if(a!=='bonus')admin()}};
+async function admin(){const r=await api('a_stats');if(!r)return;AU=r.users;
+ $('#aN').textContent=r.users.length;$('#aT').textContent=Object.entries(r.tot).map(([k,v])=>amt(v)+' '+k).join(', ')||'пусто';aUsers();
+ const a=await api('a_ad_list');if(a)$('#adList').innerHTML=a.ads.length?a.ads.map(x=>`<div class="row"><div class="grow"><b>${esc(x.title)}</b>${x.on?'':'<span class="tag">выкл</span>'}<div class="sub">👁 ${x.v} · 👆 ${x.c}${x.v?' · CTR '+(x.c/x.v*100).toFixed(1)+'%':''}${x.until?' · до '+new Date(x.until).toLocaleDateString('ru-RU'):''}</div></div><button class="chip mini" data-adt="${esc(x.id)}">${x.on?'Выкл':'Вкл'}</button><button class="chip mini" data-add="${esc(x.id)}">✕</button></div>`).join(''):'<div class="empty">Рекламы нет</div>';
+ const p=await api('a_promo_list');if(p)$('#prList').innerHTML=p.promos.length?p.promos.map(x=>`<div class="row"><div class="grow"><b>${esc(x.code)}</b><div class="sub">${amt(x.a)} ${x.c} · использовано ${x.used}${x.max?' / '+x.max:''}</div></div><button class="chip mini" data-prd="${esc(x.code)}">✕</button></div>`).join(''):'<div class="empty">Промокодов нет</div>';
+ const s=await api('a_src');if(s)$('#srcList').innerHTML=s.srcs.length?s.srcs.map(x=>`<div class="row"><div class="grow"><b>${esc(x.tag)}</b><div class="sub">t.me/${BOT}?start=s_${esc(x.tag)}</div></div><b>${x.n}</b></div>`).join(''):'<div class="empty">Переходов по меткам пока нет</div>'}
+function aUsers(){const q=AQ.toLowerCase();$('#aList').innerHTML=AU.filter(u=>!q||(u.name+u.wid+u.id).toLowerCase().includes(q)).map(u=>`<div class="row"><div class="av" style="width:38px;height:38px">${esc((u.name||'?')[0].toUpperCase())}</div><div class="grow"><b>${esc(u.name||'—')}</b>${u.banned?'<span class="tag">бан</span>':''}<div class="sub">${esc(u.wid)} · tg ${esc(u.id)}${u.refs?' · 👥'+u.refs:''}</div></div><div class="r sub">${Object.entries(u.bal).filter(x=>x[1]).map(([k,v])=>amt(v)+' '+k).join('<br>')}</div></div>`).join('')}
+const done=async(a,d)=>{const r=await api(a,d);if(r){toast(r.done||'Готово');if(a!=='bonus'&&a!=='promo')admin()}return r};
+const openLink=u=>/^https:\/\/t\.me\//i.test(u)&&tgw?tgw.openTelegramLink(u):(tgw?tgw.openLink(u):window.open(u,'_blank'));
+const shareRef=()=>{const l=`https://t.me/${BOT}?start=r_${S.me.id}`,u='https://t.me/share/url?url='+encodeURIComponent(l)+'&text='+encodeURIComponent('Nexium Wallet — кошелёк, обмен, P2P и трейдинг в Telegram. Заходи, получи бонус 🎁');tgw?tgw.openTelegramLink(u):window.open(u)};
 
-document.addEventListener('input',e=>{if(e.target.id==='stake')payPrev()});
+document.addEventListener('input',e=>{const i=e.target.id;if(i==='stake')payPrev();if(['sa','sf','st'].includes(i))quote();if(['f1','f2','f4'].includes(i))p2pQuote();
+ if(i==='mq'){MQ=e.target.value;mkt()}if(i==='aq'){AQ=e.target.value;aUsers()}});
+document.addEventListener('change',e=>{if(['sf','st'].includes(e.target.id))quote();if(['f2','f4'].includes(e.target.id))p2pQuote()});
 document.addEventListener('click',async e=>{
- const b=e.target.closest('button');if(!b)return;const d=b.dataset,id=b.id;
+ const b=e.target.closest('button,.row[data-coin]');if(!b)return;const d=b.dataset,id=b.id;
+ if(d.coin)return coinSheet(d.coin);
+ if(d.cs){shut();if(d.cs==='swap')return swapSheet(d.k);if(d.cs==='send')return forms.send(d.k);if(d.cs==='trade'){T.c=d.k;T.pts=[];T.k=[];go('t');return}}
  if(d.a)return forms[d.a]();if(d.t)return go(d.t);
+ if(d.hf)return histSheet(d.hf);
  if(d.cu){CU=d.cu;try{localStorage.setItem('nx_cu',CU)}catch{}return render()}
- if(d.pair){T.c=d.pair;T.pts=[];T.k=[];drawChips();tick();return loadK()}
+ if(d.ms){MS=d.ms;return mkt()}
+ if(d.pair){T.c=d.pair;T.pts=[];T.k=[];drawChips();loadK();return chart()}
  if(d.sec){T.sec=+d.sec;return drawChips()}
  if(d.kind){T.kind=d.kind;drawChips();return chart()}if(d.iv){T.iv=d.iv;T.k=[];drawChips();return loadK()}
  if(d.q){const v=d.q==='MAX'?Math.floor((S.me.bal.USDT||0)*100)/100:d.q;$('#stake').value=v;return payPrev()}
- if(d.pf){PF=d.pf;return p2pDraw()}
+ if(d.sq){const f=$('#sf').value,v=(S.me.bal[f]||0)*(+d.sq/100);$('#sa').value=d.sq==='100'?(S.me.bal[f]||0):Math.floor(v*1e8)/1e8;return quote()}
+ if(d.pf){PF=d.pf;return p2pDraw()}if(d.po){PO=d.po;return p2pDraw()}
  if(d.p2p){const r=await api(d.p2p,{id:d.id});if(r){toast(d.p2p==='p2p_buy'?'Обмен выполнен':'Объявление снято');p2pLoad()}return}
+ if(d.ad){const r=await api('ad_click',{id:d.ad});if(r?.url)openLink(r.url);return}
+ if(d.link)return openLink(d.link);
+ if(d.adt)return done('a_ad_toggle',{id:d.adt});if(d.add)return done('a_ad_del',{id:d.add});if(d.prd)return done('a_promo_del',{code:d.prd});
  if(id==='bonusBtn')return done('bonus');
+ if(id==='pBtn'){const r=await done('promo',{code:$('#pcode').value});if(r)$('#pcode').value='';return}
  if(id==='refBtn'){navigator.clipboard?.writeText(`https://t.me/${BOT}?start=r_${S.me.id}`);return toast('Ссылка скопирована')}
+ if(id==='refShare')return shareRef();
  if(id==='widBtn'||(id==='go'&&mode==='recv')){navigator.clipboard?.writeText(S.me.wid);return toast('ID скопирован')}
+ if(id==='flip'){const f=$('#sf').value;$('#sf').value=$('#st').value;$('#st').value=f;return quote()}
+ if(id==='go'&&mode==='swap'){const r=await api('swap',{from:$('#sf').value,to:$('#st').value,amt:$('#sa').value});if(r){shut();toast('Обмен: '+r.done)}return}
  if(id==='go'&&mode==='send'){const r=await api('send',{to:$('#f1').value,amt:$('#f2').value,cur:$('#f3').value});if(r){shut();toast('Отправлено')}return}
  if(id==='go'&&mode==='check'){const a=$('#f2').value,c=$('#f3').value,r=await api('mkcheck',{amt:a,cur:c});
-  if(r){LK=r.link;window.lkT='Чек на '+a+' '+c;sheet(`<h3>Чек готов</h3><div class="chk">${r.link}</div><button class="btn" id="sh">Поделиться</button><button class="btn sec2" id="cp" style="margin-top:8px">Скопировать ссылку</button>`)}return}
+  if(r){LK=r.link;window.lkT='Чек на '+a+' '+c;sheet(`<h3>Чек готов</h3><div class="chk">${esc(r.link)}</div><button class="btn" id="sh">Поделиться</button><button class="btn sec2" id="cp" style="margin-top:8px">Скопировать ссылку</button>`)}return}
  if(id==='cp'){navigator.clipboard?.writeText(LK);return toast('Ссылка скопирована')}
  if(id==='sh')return tgw?tgw.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(LK)+'&text='+encodeURIComponent(window.lkT)):0;
  if(id==='bUp')return trade('up');if(id==='bDn')return trade('down');
- if(id==='pNew'){sheet(`<h3>Новое объявление</h3><div class="lbl">Отдаю (уйдёт в залог)</div><div class="two"><input id="f1" inputmode="decimal" placeholder="Сумма"><select id="f2">${opts('USDT')}</select></div><div class="lbl">Хочу получить</div><div class="two"><input id="f3" inputmode="decimal" placeholder="Сумма"><select id="f4">${opts('TON')}</select></div><button class="btn" id="goP">Опубликовать</button>`);return}
+ if(id==='pNew'){mode='p2p';sheet(`<h3>Новое объявление</h3><div class="lbl">Отдаю (уйдёт в залог)</div><div class="two"><input id="f1" inputmode="decimal" placeholder="Сумма"><select id="f2">${opts('USDT')}</select></div><div class="lbl">Хочу получить</div><div class="two"><input id="f3" inputmode="decimal" placeholder="Сумма"><select id="f4">${opts('TON')}</select></div><div class="q" id="pq"></div><button class="btn sec2" id="pMk" style="margin-bottom:10px">Подставить рыночную цену</button><button class="btn" id="goP">Опубликовать</button>`);p2pQuote();return}
+ if(id==='pMk'){const sa=+String($('#f1').value).replace(',','.')||0,sc=$('#f2').value,wc=$('#f4').value;if(sa&&P[sc]&&P[wc])$('#f3').value=+(sa*P[sc].p/P[wc].p).toPrecision(6);return}
  if(id==='goP'){const r=await api('p2p_make',{sa:$('#f1').value,sc:$('#f2').value,wa:$('#f3').value,wc:$('#f4').value});if(r){shut();toast('Опубликовано');p2pLoad()}return}
+ if(id==='adSave')return done('a_ad_save',{title:$('#adT').value,text:$('#adX').value,url:$('#adU').value,btn:$('#adB').value,days:$('#adD').value});
+ if(id==='bcBtn'){if(confirm('Отправить сообщение всем пользователям?'))done('a_bc',{text:$('#bcT').value,btn:$('#bcB').value,url:$('#bcU').value});return}
+ if(id==='sGen'){const t=$('#sTag').value.replace(/[^A-Za-z0-9_-]/g,'');if(!t)return toast('Введи метку',1);const l=`https://t.me/${BOT}?start=s_${t}`;navigator.clipboard?.writeText(l);return toast('Ссылка скопирована: '+l)}
+ if(id==='prBtn')return done('a_promo_new',{code:$('#prC').value,amt:$('#prA').value,cur:$('#prK').value,max:$('#prM').value});
  if(id==='gBtn')return done('a_give',{to:$('#gTo').value,amt:$('#gAmt').value,cur:$('#gCur').value});
  if(id==='wBtn')return done('a_setwid',{to:$('#wTo').value,wid:$('#wNew').value});
- if(id==='bcBtn'){if(confirm('Отправить сообщение всем пользователям?'))done('a_bc',{text:$('#bcT').value});return}
  if(id==='bOn')return done('a_ban',{to:$('#bTo').value,on:true});
  if(id==='bOff')return done('a_ban',{to:$('#bTo').value,on:false});
  if(id==='okTerms'){try{localStorage.setItem('nx_ok','1')}catch{}shut()}
 });
-$('#gCur').innerHTML=opts('USDT');
+$('#gCur').innerHTML=opts('USDT');$('#prK').innerHTML=opts('USDT');
 setInterval(()=>{let due=0;$$('.cd').forEach(e=>{const s=Math.ceil((+e.dataset.e-Date.now())/1000);if(s<=0){e.textContent='расчёт…';due=1}else e.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')});
  if(due&&!window.stl){window.stl=1;api('settle').then(r=>{window.stl=0;const t=r?.me.done?.[0];if(t&&Date.now()-t.exp<20000)toast('Сделка закрыта: '+({win:'выигрыш +'+amt(t.pay-t.st),lose:'проигрыш',tie:'ничья'})[t.r])})}},1000);
-setInterval(tick,2000);setInterval(loadK,6000);drawChips();api('settle').then(()=>api('info'));rates();setInterval(rates,45000);
+setInterval(loadK,12000);setInterval(()=>{if($('#p-w').classList.contains('on'))api('ad_list')},90000);
+drawChips();rates();api('settle').then(()=>{api('info');api('ad_list')});
 let seen=1;try{seen=localStorage.getItem('nx_ok')}catch{}
-if(!seen)sheet(`<h3>Добро пожаловать</h3><div class="warn" style="margin-bottom:14px">Nexium Wallet — демо-кошелёк с <b>виртуальными</b> монетами. Монеты не имеют денежной стоимости, их нельзя ввести или вывести. Курсы реальные, а трейд и P2P — игра на виртуальном балансе. Каждый день можно забирать бонус.</div><button class="btn" id="okTerms">Понятно</button>`);
+if(!seen)sheet(`<h3>Добро пожаловать</h3><div class="warn" style="margin-bottom:14px">Nexium Wallet — демо-кошелёк с <b>виртуальными</b> монетами. Монеты не имеют денежной стоимости, их нельзя ввести или вывести. Курсы реальные, а обмен, трейд и P2P — игра на виртуальном балансе. Каждый день можно забирать бонус.</div><button class="btn" id="okTerms">Понятно</button>`);
 </script></body></html>
