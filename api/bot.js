@@ -1,4 +1,4 @@
-import { CUR, R, tg, getUser, save, claim, makeCheck, clean, getRates, nc, cfg, roleOf, ROLES, errlog } from '../lib/core.js';
+import { LIVE, CUR, R, tg, getUser, save, claim, makeCheck, clean, getRates, nc, cfg, roleOf, ROLES, errlog } from '../lib/core.js';
 const name = f => f.first_name || f.username || 'user';
 const BOT = () => process.env.BOT_USERNAME || 'NexiumWallet_bot';
 const open = (t = '💎 Открыть кошелёк') => ({ inline_keyboard: [[{ text: t, web_app: { url: process.env.APP_URL } }]] });
@@ -14,7 +14,7 @@ const hint = (q, id, title, description) => tg('answerInlineQuery', {
   results: [{ type: 'article', id, title, description, input_message_content: { message_text: 'Nexium Wallet' } }] });
 const welcome = me => ({
   parse_mode: 'HTML',
-  text: `<b>💎 Nexium Wallet</b>\n\n• 📊 реальные курсы 10 монет\n• 🔄 мгновенный обмен\n• 🤝 P2P-биржа\n• 🧾 чеки, переводы и запросы платежа\n• 🔔 ценовые оповещения\n• 📒 адресная книга\n• 🎫 поддержка прямо в приложении\n\nТвой ID: <code>${me.wid}</code>\n\n🧪 <b>ДЕМО-версия.</b> Монеты виртуальные и не имеют денежной стоимости, ввод и вывод невозможны.`,
+  text: `<b>💎 Nexium Wallet</b>\n\n• 📊 реальные курсы 10 монет\n• 🔄 мгновенный обмен\n• 🤝 P2P-биржа\n• 🧾 чеки, переводы и запросы платежа\n• 🔔 ценовые оповещения\n• 📒 адресная книга\n• 🎫 поддержка прямо в приложении\n\nТвой ID: <code>${me.wid}</code>\n\n${LIVE ? '💼 Кастодиальный кошелёк: пополнение и вывод через @CryptoBot. Криптовалюты рискованны. Продолжая, ты принимаешь /terms и /privacy.' : '🧪 <b>Учебный режим.</b> Монеты виртуальные, ввод и вывод невозможны.'}`,
   reply_markup: { inline_keyboard: [
     [{ text: '💎 Открыть кошелёк', web_app: { url: process.env.APP_URL } }],
     [{ text: '📈 Курсы', callback_data: 'rates' }, { text: '👥 Пригласить', callback_data: 'ref' }],
@@ -53,9 +53,11 @@ export default async function handler(req, res) {
       } else if (cmd === '/balance') {
         const rt = await getRates(), rows = CUR.filter(c => me.bal[c]).map(c => `<b>${c}</b>  ${me.bal[c]}  ≈ $${fmt(me.bal[c] * (rt[c]?.p || 0))}`);
         const tot = CUR.reduce((s, c) => s + (me.bal[c] || 0) * (rt[c]?.p || 0), 0);
-        await tg('sendMessage', { chat_id: m.chat.id, parse_mode: 'HTML', text: rows.length ? `<b>💼 Баланс</b>\n\n${rows.join('\n')}\n\nИтого ≈ <b>$${fmt(tot)}</b>` : 'Баланс пуст. Получить монеты можно переводом от другого пользователя или через P2P.', reply_markup: open() });
+        await tg('sendMessage', { chat_id: m.chat.id, parse_mode: 'HTML', text: rows.length ? `<b>💼 Баланс</b>\n\n${rows.join('\n')}\n\nИтого ≈ <b>$${fmt(tot)}</b>` : 'Баланс пуст. Пополнить баланс можно в приложении.', reply_markup: open() });
       } else if (cmd === '/ref') {
         await tg('sendMessage', { chat_id: m.chat.id, parse_mode: 'HTML', text: `<b>👥 Реферальная программа</b>\nДелись ссылкой с друзьями.\nПриглашено: <b>${me.refs || 0}</b>\n\n<code>${refLink(me.id)}</code>`, reply_markup: { inline_keyboard: [[{ text: '📤 Поделиться ссылкой', url: shareUrl(me.id) }]] } });
+      } else if (cmd === '/privacy' || cmd === '/terms') {
+        await tg('sendMessage', { chat_id: m.chat.id, text: cmd === '/privacy' ? 'Политика конфиденциальности' : 'Условия использования', reply_markup: { inline_keyboard: [[{ text: '📄 Открыть', url: process.env.APP_URL + (cmd === '/privacy' ? '/privacy' : '/terms') }]] } });
       } else if (cmd === '/id') {
         await tg('sendMessage', { chat_id: m.chat.id, parse_mode: 'HTML', text: `Твой ID в кошельке: <code>${me.wid}</code>\nTelegram ID: <code>${me.id}</code>\nРоль: ${ROLES[await roleOf(me.id)]}` });
       } else if (cmd === '/support') {
@@ -67,7 +69,7 @@ export default async function handler(req, res) {
         const r = await roleOf(me.id);
         await tg('sendMessage', { chat_id: m.chat.id, text: r === 'user' ? 'У тебя нет доступа к панели персонала.' : `🛡 Ты: ${ROLES[r]}. Панель — вкладка «Staff» в приложении.`, reply_markup: r === 'user' ? undefined : open('🛡 Открыть панель') });
       } else if (cmd === '/help') {
-        await tg('sendMessage', { chat_id: m.chat.id, text: '/start — главное меню\n/rates — курсы\n/balance — баланс\n/ref — пригласить друзей\n/id — мой ID и роль\n/news — новости\n/support — поддержка\n\nЧек в любом чате: @' + BOT() + ' 1 USDT', reply_markup: open() });
+        await tg('sendMessage', { chat_id: m.chat.id, text: '/start — главное меню\n/rates — курсы\n/balance — баланс\n/ref — пригласить друзей\n/id — мой ID и роль\n/news — новости\n/support — поддержка\n/privacy — политика конфиденциальности\n/terms — условия\n\nЧек в любом чате: @' + BOT() + ' 1 USDT', reply_markup: open() });
       }
     }
     if (u.inline_query) {

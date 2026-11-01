@@ -1,4 +1,5 @@
-import { CUR, ADMIN, R, verify, getUser, save, log, clean, add, makeCheck, tg, getRates, lock, unlock, nc, cfg, setCfg, pubCfg, ROLES, PERMS, roleOf, audit, errlog } from '../lib/core.js';
+import { CUR, ADMIN, R, verify, getUser, save, log, clean, add, makeCheck, tg, getRates, lock, unlock, nc, cfg, setCfg, pubCfg, ROLES, PERMS, roleOf, audit, errlog, LIVE, PAY_ON, ASSETS, withLock } from '../lib/core.js';
+import { cp, createDeposit, settleInvoice, payout, refundWd } from '../lib/pay.js';
 import { resetUser, resetAll, clearOffers, userCard } from '../lib/admin.js';
 import { checkAlerts } from '../lib/alerts.js';
 
@@ -19,9 +20,9 @@ const allAds = async () => {
   const rows = await Promise.all(ids.map(async i => { const r = await R('GET', 'ad:' + i); if (!r) { await R('SREM', 'ads', i); return null; } return JSON.parse(r); }));
   return rows.filter(Boolean).sort((a, b) => b.ts - a.ts);
 };
-const READ_ONLY = new Set(['me', 'p2p_list', 'ad_list', 'ad_click', 'news_list', 'req_list', 'tk_list', 'a_dash', 'a_users', 'a_cfg_get', 'a_audit', 'a_errs', 'a_health', 'a_roles', 'a_tk_list', 'a_bug_list', 'a_ad_list', 'a_src', 'a_user']);
+const READ_ONLY = new Set(['me', 'p2p_list', 'ad_list', 'ad_click', 'news_list', 'req_list', 'tk_list', 'a_dash', 'a_users', 'a_cfg_get', 'a_audit', 'a_errs', 'a_health', 'a_roles', 'a_tk_list', 'a_bug_list', 'a_ad_list', 'a_src', 'a_user', 'dep_list', 'wd_list', 'a_wd_list', 'a_solv']);
 // какие действия можно отключить флагом
-const FLAG = { send: 'send', swap: 'swap', p2p_make: 'p2p', p2p_buy: 'p2p', mkcheck: 'checks', req_make: 'requests', req_pay: 'requests', tk_new: 'support', tk_reply: 'support' };
+const FLAG = { send: 'send', swap: 'swap', dep_new: 'deposit', wd_new: 'withdraw', p2p_make: 'p2p', p2p_buy: 'p2p', mkcheck: 'checks', req_make: 'requests', req_pay: 'requests', tk_new: 'support', tk_reply: 'support' };
 
 export default async function handler(req, res) {
   const b0 = req.body || {}, tu0 = verify(b0.initData);
@@ -43,6 +44,8 @@ async function run(req, res) {
   if (CFG.maint && !staff) return res.status(503).json({ err: CFG.maintMsg, maint: true });
   const act = String(b.action || '');
   if (FLAG[act] && CFG.flags[FLAG[act]] === false && !staff) return fail('Раздел временно отключён администратором');
+  const FREE = new Set(['me', 'consent', 'news_list', 'ad_list', 'ad_click']);
+  if (!me.consent && !FREE.has(act)) return fail('Сначала прими Условия и Политику конфиденциальности');
   const cur = nc(String(b.cur || '').toUpperCase()), amt = clean(b.amt);
   const staffName = () => (me.name || me.wid) + ' (' + ROLES[role] + ')';
   try {
@@ -117,6 +120,42 @@ async function run(req, res) {
         const code = await makeCheck(me.id, cur, amt);
         return ok({ link: `https://t.me/${process.env.BOT_USERNAME || 'NexiumWallet_bot'}?start=c_${code}` });
       }
+      case 'consent': { if (b.accept !== true) return fail('Нужно согласие'); me.consent = { v: 1, ts: Date.now() }; await save(me); return ok({ done: 'Спасибо!' }); }
+      // ---- реальные пополнения и выводы (Crypto Pay) ----
+      case 'dep_new': {
+        if (!PAY_ON) return fail('Пополнение сейчас недоступно');
+        if (!ASSETS[cur] || !amt) return fail('Проверь монету и сумму');
+        const rt = await getRates(), usdv = amt * (rt[cur]?.p || 0);
+        if (!usdv) return fail('Курс временно недоступен'); if (usdv < CFG.depMin) return fail(`Минимальное пополнение: $${CFG.depMin}`);
+        if ((await R('SCARD', 'invu:' + me.id)) > 200) return fail('Слишком много счетов, обратись в поддержку');
+        try { const d = await createDeposit(me, cur, amt); return ok({ pay: d, done: 'Счёт создан' }); }
+        catch (e) { await errlog('dep_new', e, me.id); return fail(e.api ? 'Платёжный сервис отклонил счёт: ' + e.message : 'Платёжный сервис недоступен, попробуй позже'); }
+      }
+      case 'dep_check': {
+        if (!PAY_ON) return ok(); let paid = 0;
+        for (const id of ((await R('SMEMBERS', 'invu:' + me.id)) || []).slice(-30)) { const iv = await getJ('inv:' + id); if (iv && !iv.done) { try { if ((await settleInvoice(id, true)) === 'paid') paid++; } catch (e) { await errlog('dep_check', e, me.id); } } }
+        me = await getUser(me.id); return ok({ done: paid ? `Зачислено платежей: ${paid}` : 'Новых оплат пока нет' });
+      }
+      case 'dep_list': { const ids = (await R('SMEMBERS', 'invu:' + me.id)) || []; return ok({ invs: (await many('inv:', ids.slice(-15))).sort((x, y) => y.ts - x.ts) }); }
+      case 'wd_new': {
+        if (!PAY_ON) return fail('Вывод сейчас недоступен');
+        if (!ASSETS[cur] || !amt) return fail('Проверь монету и сумму');
+        if ((me.bal[cur] || 0) < amt) return fail('Недостаточно ' + cur);
+        const rt = await getRates(), usdv = amt * (rt[cur]?.p || 0);
+        if (!usdv) return fail('Курс временно недоступен'); if (usdv < CFG.wdMin) return fail(`Минимальный вывод: $${CFG.wdMin}`);
+        const day = new Date().toISOString().slice(0, 10), spent = me.wdDay?.d === day ? me.wdDay.usd : 0;
+        if (CFG.wdDaily > 0 && spent + usdv > CFG.wdDaily) return fail(`Дневной лимит вывода: $${CFG.wdDaily}`);
+        const fee = Math.round(amt * CFG.wdFee * 1e8) / 1e8, net = Math.round((amt - fee) * 1e8) / 1e8; if (net <= 0) return fail('Слишком маленькая сумма');
+        const wd = { id: uid(), u: me.id, w: me.wid, c: cur, a: amt, fee, net, usd: Math.round(usdv * 100) / 100, ts: Date.now(), st: usdv <= CFG.wdAutoMax ? 'pending' : 'review' };
+        add(me, cur, -amt); log(me, { t: 'withdraw', c: cur, a: -amt }); me.wdDay = { d: day, usd: spent + usdv }; await save(me);
+        await R('SET', 'wd:' + wd.id, JSON.stringify(wd)); await R('SADD', 'wds', wd.id); await R('SADD', 'wdu:' + me.id, wd.id);
+        if (wd.st === 'review') { tg('sendMessage', { chat_id: ADMIN, text: `🔎 Вывод на проверку: ${wd.net} ${wd.c} (≈$${wd.usd}) от ${me.wid}` }).catch(() => {}); return ok({ done: 'Заявка отправлена на проверку. Обычно это занимает немного времени' }); }
+        const r = await payout(wd);
+        if (r.ok) { me = await getUser(me.id); return ok({ done: `Выведено ${net} ${cur} на твой аккаунт @CryptoBot` }); }
+        if (r.definite) { await refundWd(wd, '', true); me = await getUser(me.id); return fail(r.why === 'USER_NOT_FOUND' ? 'Открой @CryptoBot и нажми Start, затем повтори вывод' : 'Вывод отклонён: ' + r.why); }
+        return ok({ done: 'Заявка принята и ожидает обработки' });
+      }
+      case 'wd_list': { const ids = (await R('SMEMBERS', 'wdu:' + me.id)) || []; return ok({ wds: (await many('wd:', ids.slice(-15))).sort((x, y) => y.ts - x.ts) }); }
       // ---- адресная книга ----
       case 'ct_save': {
         const n = txt(b.n, 24), t = await find(b.w); if (!t || t.id === me.id) return fail('Пользователь не найден');
@@ -248,6 +287,33 @@ async function run(req, res) {
         const r = await tg('sendMessage', { chat_id: u.id, text }); if (!r.ok) return fail('Не удалось отправить (пользователь закрыл бота?)');
         await A('msg', u.wid); return ok({ done: 'Отправлено' });
       }
+      case 'a_solv': {
+        if (need2('wd')) return;
+        const ids = ((await R('SMEMBERS', 'users')) || []).slice(0, 3000), liab = {};
+        for (let i = 0; i < ids.length; i += 50) (await Promise.all(ids.slice(i, i + 50).map(x => getUser(x)))).forEach(u => Object.entries(u.bal).forEach(([c, a]) => liab[c] = (liab[c] || 0) + a));
+        let bal = {}; try { for (const x of await cp('getBalance')) bal[x.currency_code] = Number(x.available); } catch (e) { return fail('Crypto Pay: ' + e.message); }
+        const pend = await many('wd:', (await R('SMEMBERS', 'wds')) || []);
+        return ok({ solv: Object.keys(ASSETS).map(c => ({ c, liab: +(liab[c] || 0).toFixed(8), real: bal[ASSETS[c]] ?? 0 })), wdPending: pend.filter(x => x.st === 'review').length });
+      }
+      case 'a_wd_list': {
+        if (need2('wd')) return;
+        const ids = (await R('SMEMBERS', 'wds')) || [], ws = await many('wd:', ids.slice(-150));
+        return ok({ wds: ws.sort((x, y) => (x.st === 'review') !== (y.st === 'review') ? (x.st === 'review' ? -1 : 1) : y.ts - x.ts) });
+      }
+      case 'a_wd_ok': {
+        if (need2('wd')) return;
+        const wd = await getJ('wd:' + b.id); if (!wd || !['review', 'pending'].includes(wd.st)) return fail('Заявка уже обработана');
+        if (!(await R('SET', 'wdbusy:' + wd.id, '1', 'NX', 'EX', 60))) return fail('Заявка уже обрабатывается');
+        const r = await payout(wd); await A('wd_ok', `${wd.w} ${wd.net} ${wd.c} → ${r.ok ? 'ok' : r.why}`);
+        if (r.ok) return ok({ done: 'Выплачено' }); if (r.definite) { await refundWd(wd, 'Отклонено платёжным сервисом: ' + r.why); return fail('Выплата отклонена (' + r.why + '), монеты возвращены пользователю'); }
+        return fail('Выплата не прошла (' + r.why + '). Заявка осталась на проверке, можно повторить');
+      }
+      case 'a_wd_no': {
+        if (need2('wd')) return;
+        const wd = await getJ('wd:' + b.id); if (!wd || !['review', 'pending'].includes(wd.st)) return fail('Заявка уже обработана');
+        if (!(await R('SET', 'wdbusy:' + wd.id, '1', 'NX', 'EX', 60))) return fail('Заявка уже обрабатывается');
+        await refundWd(wd, txt(b.why, 100)); await A('wd_no', `${wd.w} ${wd.a} ${wd.c}`); return ok({ done: 'Отклонено, монеты возвращены' });
+      }
       case 'a_bc': {
         if (need2('bc')) return;
         const text = txt(b.text, 3000); if (!text) return fail('Пустое сообщение');
@@ -264,6 +330,7 @@ async function run(req, res) {
       }
       case 'a_give': {
         if (need2('give')) return;
+        if (LIVE && Number(String(b.amt).replace(',', '.')) > 0) return fail('В боевом режиме выдача монет без обеспечения отключена (возможна только корректировка списанием)');
         const u = await find(b.to), n = Number(String(b.amt).replace(',', '.'));
         if (!u) return fail('Пользователь не найден'); if (!CUR.includes(cur) || !n) return fail('Проверь сумму и монету');
         add(u, cur, n); log(u, { t: 'admin', c: cur, a: n }); await save(u); await A('give', `${u.wid} ${n} ${cur}`);
@@ -271,6 +338,7 @@ async function run(req, res) {
       }
       case 'a_reset': {
         if (need2('reset')) return;
+        if (LIVE) return fail('В боевом режиме сброс счетов отключён: он уничтожил бы деньги пользователей');
         const mode = b.mode === 'full' ? 'full' : 'bal';
         if (!String(b.to || '').trim()) {
           if (b.confirm !== 'СБРОС') return fail('Для сброса ВСЕХ введи слово СБРОС'); if (role !== 'owner') return fail('Массовый сброс — только владелец');
@@ -360,7 +428,7 @@ async function run(req, res) {
       case 'a_cfg_get': { if (need2('cfg')) return; return ok({ conf: CFG }); }
       case 'a_cfg_set': {
         if (need2('cfg')) return;
-        const r = await setCfg({ fee: b.fee, maxSend: b.maxSend, maint: typeof b.maint === 'boolean' ? b.maint : undefined, maintMsg: b.maintMsg, flags: b.flags });
+        const r = await setCfg({ fee: b.fee, maxSend: b.maxSend, wdMin: b.wdMin, wdFee: b.wdFee, wdAutoMax: b.wdAutoMax, wdDaily: b.wdDaily, depMin: b.depMin, maint: typeof b.maint === 'boolean' ? b.maint : undefined, maintMsg: b.maintMsg, flags: b.flags });
         if (r.err) return fail(r.err); await R('DEL', 'cache:info'); await A('cfg', JSON.stringify({ fee: b.fee, maxSend: b.maxSend, maint: b.maint, flags: b.flags }).slice(0, 150));
         return ok({ conf: r.cfg, done: 'Настройки сохранены' });
       }

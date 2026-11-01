@@ -100,7 +100,8 @@ details summary{cursor:pointer;font-weight:600;padding:8px 0}
   <button class="ibtn" data-do="eye" id="eye">👁</button><button class="pill" data-do="copyid">ID <b id="wid">…</b></button></div>
  <div class="tick" id="tick"></div>
  <div class="glass hero"><div class="sub">Общий баланс</div><div class="total" id="total">—</div><div class="sub" id="btc">&nbsp;</div><div class="chips" id="curs" style="justify-content:center;margin-top:10px"></div></div>
- <div class="acts">
+ <div class="two eq" id="payRow" hidden style="margin:0 0 4px"><button class="btn g" data-do="dep">⬇️ Пополнить</button><button class="btn sec2" data-do="wd">⬆️ Вывести</button></div>
+ <div class="acts" style="margin-top:12px">
   <button class="act" data-do="send"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Отправить</button>
   <button class="act" data-do="recv"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>Получить</button>
   <button class="act" data-do="swap"><svg viewBox="0 0 24 24"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>Обмен</button>
@@ -113,7 +114,7 @@ details summary{cursor:pointer;font-weight:600;padding:8px 0}
  <div class="box" id="allocBox" hidden><h3>Структура портфеля</h3><div class="bar" id="alloc"></div><div class="leg" id="allocL"></div></div>
  <div class="hd2"><div class="sec" style="margin:0">Операции</div><button class="chip mini" data-do="hist">Все</button></div>
  <div class="list" id="hist" style="margin-top:10px"></div>
- <div class="warn" style="margin-top:18px">🧪 Демо-версия: монеты виртуальные и не имеют денежной стоимости.</div>
+ <div class="warn" style="margin-top:18px" id="wnote"></div>
 </section>
 
 <section class="pane" id="p-k">
@@ -139,10 +140,12 @@ details summary{cursor:pointer;font-weight:600;padding:8px 0}
  <div class="box"><div class="lbl" style="margin-top:0">Акцентный цвет</div><div class="sw" id="sw"></div><div class="lbl">Валюта баланса</div><div class="chips" id="curs2"></div>
   <div class="sw2"><span>Вибрация</span><div class="tg" id="tHap" data-do="tgHap"></div></div>
   <div class="sw2"><span>Скрывать баланс</span><div class="tg" id="tHide" data-do="tgHide"></div></div>
+  <div class="sw2"><span>PIN-код при входе</span><div class="tg" id="tPin" data-do="pin"></div></div>
   <div class="sw2"><span>Уведомления в боте</span><div class="tg" id="tNt" data-do="tgNt"></div></div></div>
  <div class="box"><h3>Приглашения</h3><div class="sm">Приглашено друзей: <b id="refN" style="color:#fff">0</b></div>
   <div class="two eq"><button class="btn" data-do="refShare">Поделиться</button><button class="btn sec2" data-do="refCopy">Скопировать</button></div></div>
- <details class="box"><summary>Частые вопросы</summary><p class="sm" style="margin:8px 0"><b>Это настоящие деньги?</b><br>Нет. Монеты виртуальные, ввод и вывод невозможны.</p><p class="sm" style="margin:8px 0"><b>Откуда берутся монеты?</b><br>Бесплатной раздачи нет: монеты можно получить переводом, чеком или через P2P.</p><p class="sm" style="margin:8px 0"><b>Что-то не работает?</b><br>Напиши в «Поддержку» или отправь баг-репорт.</p></details>
+ <details class="box"><summary>Частые вопросы</summary><div id="faq"></div></details>
+ <div class="box"><h3>Документы</h3><div class="two eq"><button class="btn sec2" data-link="/privacy" data-do="doc" data-u="/privacy">Политика конфиденциальности</button><button class="btn sec2" data-do="doc" data-u="/terms">Условия использования</button></div><button class="btn sec2" data-do="delreq">Запросить удаление данных</button></div>
  <div id="adv"></div>
 </section>
 
@@ -160,6 +163,8 @@ details summary{cursor:pointer;font-weight:600;padding:8px 0}
 </nav>
 <div class="sheet" id="sheet"><div class="card" id="card"></div></div>
 <div class="toast" id="toast"></div>
+<div id="lock" class="sheet" style="z-index:95;align-items:center"><div class="glass" style="padding:26px;width:min(86vw,320px);text-align:center"><div style="font-size:38px">🔒</div><h3 style="font:800 18px Manrope;margin:6px 0">Введи PIN-код</h3><input id="lk" type="password" inputmode="numeric" maxlength="6" placeholder="••••" style="text-align:center;font-size:24px;letter-spacing:8px"><div class="sm" id="lke" style="margin-top:8px;min-height:18px"></div></div></div>
+<div id="consent" class="sheet" style="z-index:96;align-items:center"><div class="glass" style="padding:24px;width:min(92vw,380px)"><div style="font-size:36px;text-align:center">📄</div><h3 style="font:800 19px Manrope;margin:6px 0;text-align:center">Прежде чем начать</h3><p class="sub" id="cnTxt" style="margin:8px 0"></p><div class="sw2" style="border:0"><span style="font-size:13.5px">Мне есть 18 лет, я прочитал(а) и принимаю <a href="#" data-do="doc" data-u="/terms" style="color:#8fcbff">Условия</a> и <a href="#" data-do="doc" data-u="/privacy" style="color:#8fcbff">Политику конфиденциальности</a></span><div class="tg" id="cnTg" data-do="cntg"></div></div><button class="btn" id="cnBtn" data-do="cnok">Продолжить</button></div></div>
 <div id="maint"><div class="glass" style="padding:28px;max-width:340px"><div style="font-size:42px">🛠</div><h3 style="font:800 20px Manrope;margin:8px 0" >Технические работы</h3><p class="sub" id="maintT"></p></div></div>
 
 <script>
@@ -204,8 +209,8 @@ async function rates(){
 async function loadSp(){try{const j=await(await fetch('/api/rates?sp=1')).json();if(j.s){SPK=j.s;render()}}catch{}}
 const spark=(k,w=62,h=24)=>{const a=SPK[k];if(!a||a.length<3)return `<svg class="spark" viewBox="0 0 ${w} ${h}"></svg>`;const mn=Math.min(...a),mx=Math.max(...a),r=mx-mn||1,col=a[a.length-1]>=a[0]?'#4fe3a4':'#ff6b88';
  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${a.map((x,i)=>`${(i/(a.length-1)*w).toFixed(1)},${(h-2-(x-mn)/r*(h-4)).toFixed(1)}`).join(' ')}" fill="none" stroke="${col}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>`};
-const TYPE={in:['Получено','↓'],out:['Отправлено','↑'],check_in:['Чек активирован','↓'],check_out:['Чек списан','↑'],swap_in:['Обмен (получено)','⇄'],swap_out:['Обмен (отдано)','⇄'],p2p_buy:['P2P покупка','🤝'],p2p_sell:['P2P продажа','🤝'],admin:['Корректировка','🛡']};
-const txRow=x=>{const L=TYPE[x.t]||[x.t,'•'];return `<div class="row nc"><span class="coin" style="--c:${x.a>=0?'#2a9d6a':'#4a5878'};width:40px;height:40px">${L[1]}</span><div class="g"><b>${L[0]}</b><span class="sm">${x.w?esc(x.w)+' · ':''}${x.n?'💬 '+esc(x.n)+' · ':''}${dt(x.ts)}</span></div><div class="r"><b class="${x.a>=0?'up':'down'}">${H_((x.a>=0?'+':'')+amt(x.a))}</b><span class="sm">${x.c}</span></div></div>`};
+const TYPE={in:['Получено','↓'],out:['Отправлено','↑'],check_in:['Чек активирован','↓'],check_out:['Чек списан','↑'],swap_in:['Обмен (получено)','⇄'],swap_out:['Обмен (отдано)','⇄'],p2p_buy:['P2P покупка','🤝'],p2p_sell:['P2P продажа','🤝'],admin:['Корректировка','🛡'],deposit:['Пополнение','⬇️'],withdraw:['Вывод','⬆️'],withdraw_back:['Возврат вывода','↩️']};
+const txRow=x=>{const L=TYPE[x.t]||[x.t,'•'];return `<div class="row" data-do="txd" data-ts="${x.ts}"><span class="coin" style="--c:${x.a>=0?'#2a9d6a':'#4a5878'};width:40px;height:40px">${L[1]}</span><div class="g"><b>${L[0]}</b><span class="sm">${x.w?esc(x.w)+' · ':''}${x.n?'💬 '+esc(x.n)+' · ':''}${dt(x.ts)}</span></div><div class="r"><b class="${x.a>=0?'up':'down'}">${H_((x.a>=0?'+':'')+amt(x.a))}</b><span class="sm">${x.c}</span></div></div>`};
 const total=()=>KEYS.reduce((s,k)=>s+(S.me.bal[k]||0)*(P[k]?.p||0),0);
 
 /* ---------- рендер ---------- */
@@ -230,14 +235,14 @@ function render(){const m=S.me;if(!m)return;
  $('#alloc').innerHTML=al.map(([k,x])=>`<i style="width:${x/t*100}%;background:${C[k][0]}"></i>`).join('');
  $('#allocL').innerHTML=al.map(([k,x])=>`<span style="--c:${C[k][0]}">${k} ${(x/t*100).toFixed(1)}%</span>`).join('');
  $('#hist').innerHTML=m.tx.slice(0,5).map(txRow).join('')||'<div class="empty">Операций пока нет</div>';
- $('#refN').textContent=m.refs||0;
- $('#tHap').classList.toggle('on',HP);$('#tHide').classList.toggle('on',HB);$('#tNt').classList.toggle('on',m.nt!==false);
+ $('#refN').textContent=m.refs||0;legalUI();
+ $('#tHap').classList.toggle('on',HP);$('#tHide').classList.toggle('on',HB);$('#tNt').classList.toggle('on',m.nt!==false);$('#tPin').classList.toggle('on',!!LS.get('nx_pin',''));
  $('#sw').innerHTML=ACC.map((a,i)=>`<i data-do="acc" data-i="${i}" class="${i===+LS.get('nx_acc',0)?'on':''}" style="background:linear-gradient(135deg,${a[0]},${a[1]})"></i>`).join('');
  drawMenu();
  if($('#p-k').classList.contains('on'))mkt();if($('#p-p').classList.contains('on'))p2pDraw();
 }
 function drawMenu(){
- const n=(S.reqIn||[]).length,items=[['ct','📒','Контакты','Адресная книга'],['req','📩','Запросы','Платежи по запросу',n],['al','🔔','Оповещения',(S.me.alerts||[]).length+' активных'],['hist','🧾','История','Фильтры и экспорт'],['news','📰','Новости','Что нового'],['tk','🎫','Поддержка','Написать нам'],['bug','🐞','Баг-репорт','Сообщить об ошибке'],['about','ℹ️','О проекте','Демо-кошелёк']];
+ const n=(S.reqIn||[]).length,items=[['ct','📒','Контакты','Адресная книга'],['req','📩','Запросы','Платежи по запросу',n],['al','🔔','Оповещения',(S.me.alerts||[]).length+' активных'],['hist','🧾','История','Фильтры и экспорт'],['conv','🧮','Конвертер','Монеты в валюты'],['news','📰','Новости','Что нового'],['tk','🎫','Поддержка','Написать нам'],['bug','🐞','Баг-репорт','Сообщить об ошибке'],['about','ℹ️','О проекте',S.cfg.live?'Условия и риски':'Учебный режим']];
  $('#menu').innerHTML=items.map(([d,e,t,s,c])=>`<div class="mi" data-do="${d}"><span class="e">${e}</span><b>${t}</b><span>${s}</span>${c?`<i class="n">${c}</i>`:''}</div>`).join('');
 }
 function mkt(){
@@ -296,7 +301,7 @@ const H={
  async tkclose(d){const r=await done('tk_close',{id:d.id},false);if(r){await api('tk_list');tkSheet()}},
  bug(){sheet(`<h3>Баг-репорт</h3><div class="sub">Нашёл ошибку? Расскажи, что произошло. Тестировщики и кодеры увидят это сразу.</div>${F('bt','Заголовок','Например: не открывается P2P')}<div class="lbl">Описание</div><textarea id="bx" placeholder="Что делал, что ожидал, что получил"></textarea>${B('Отправить','dobug')}`)},
  dobug(){done('bug_new',{title:v('bt'),text:v('bx')})},
- about(){sheet(`<h3>Nexium Wallet</h3><p class="sub" style="margin:8px 0">Демонстрационный кошелёк в Telegram. Все монеты виртуальные, у них нет денежной стоимости, ввод и вывод невозможны. Курсы — реальные рыночные.</p>${kv('Комиссия обмена',(S.cfg.fee*100).toFixed(2)+'%')}${kv('Лимит перевода',S.cfg.maxSend?('$'+S.cfg.maxSend):'нет')}${kv('Твоя роль',ROLE[S.role])}`)},
+ about(){sheet(`<h3>Nexium Wallet</h3><p class="sub" style="margin:8px 0">${S.cfg.live?'Кастодиальный кошелёк в Telegram: пополнение и вывод через @CryptoBot, внутренние переводы, обмен по рыночному курсу, P2P и чеки. Криптовалюты рискованны, средства не застрахованы.':'Учебный режим: монеты виртуальные, у них нет денежной стоимости, ввод и вывод невозможны.'}</p>${kv('Комиссия обмена',(S.cfg.fee*100).toFixed(2)+'%')}${kv('Лимит перевода',S.cfg.maxSend?('$'+S.cfg.maxSend):'нет')}${kv('Твоя роль',ROLE[S.role])}`)},
  refShare(){const l=`https://t.me/${BOT}?start=r_${S.me.id}`;openLink('https://t.me/share/url?url='+encodeURIComponent(l)+'&text='+encodeURIComponent('Nexium Wallet — кошелёк, обмен и P2P в Telegram.'))},
  refCopy(){navigator.clipboard?.writeText(`https://t.me/${BOT}?start=r_${S.me.id}`);toast('Ссылка скопирована')},
  ad(d){api('ad_click',{id:d.id}).then(r=>r?.url&&openLink(r.url))},
@@ -353,7 +358,7 @@ function p2pDraw(){$('#pf').innerHTML=['ALL',...KEYS].map(k=>`<button class="chi
 function p2pForm(){sheet(`<h3>Новое объявление</h3><div class="sub">Монеты продавца блокируются до сделки или снятия объявления.</div><div class="two">${SEL('pf2','Продаю',opts('GRAM'))}${SEL('pf4','Хочу получить',opts('USDT'))}</div>${F('pf1','Количество','0.00','num')}${F('pf3','Цена за всё','0.00','num')}<div class="sm" style="margin-top:8px">Цена подставляется по рынку, можно изменить (не дальше ±50%).</div>${B('Опубликовать','p2pgo')}`)}
 
 /* ---------- Staff ---------- */
-const SECT=[['dash','📊','Дашборд','stats'],['users','👥','Пользователи','users'],['tk','🎫','Тикеты','tickets'],['bugs','🐞','Баги','bugs'],['news','📰','Новости','news'],['bc','📣','Рассылка','bc'],['ads','📢','Реклама','ads'],['roles','🛡','Роли','roles'],['cfg','⚙️','Настройки','cfg'],['sys','🖥','Система','logs'],['audit','📜','Аудит','audit']];
+const SECT=[['dash','📊','Дашборд','stats'],['users','👥','Пользователи','users'],['tk','🎫','Тикеты','tickets'],['bugs','🐞','Баги','bugs'],['news','📰','Новости','news'],['bc','📣','Рассылка','bc'],['ads','📢','Реклама','ads'],['roles','🛡','Роли','roles'],['wd','💳','Выводы','wd'],['cfg','⚙️','Настройки','cfg'],['sys','🖥','Система','logs'],['audit','📜','Аудит','audit']];
 async function admin(){const av=SECT.filter(s=>has(s[3]));if(!av.find(s=>s[0]===AT))AT=av[0]?.[0];
  $('#anav').innerHTML=av.map(s=>`<button class="chip ${AT===s[0]?'on':''}" data-do="at" data-k="${s[0]}">${s[1]} ${s[2]}</button>`).join('');
  $('#av3').innerHTML='<div class="sk"></div>';await (A[AT]?.())}
@@ -381,17 +386,24 @@ const A={
   $('#av3').innerHTML=`<div class="box"><h3>Назначить роль</h3>${F('rlU','Пользователь','ID кошелька или Telegram ID')}${SEL('rlR','Роль',Object.entries(ROLE).filter(x=>x[0]!=='owner').map(([k,l])=>`<option value="${k}">${l}</option>`).join(''))}${B('Назначить','rlset')}
   <div class="sm" style="margin-top:10px">Админ — полный доступ кроме выдачи монет и назначения кодеров/админов. Модератор — баны, тикеты, новости. Поддержка — тикеты и сообщения. Кодер — настройки, логи, баги, тех. работы. Тестировщик — баги, логи, статистика.</div></div>
   <div class="list">${r.staffList.map(s=>`<div class="row nc"><div class="g"><b>${esc(s.name||s.wid)}</b><span class="sm">${esc(s.wid)}</span></div><span class="role ${s.role}">${ROLE[s.role]}</span><button class="chip mini" data-do="rlx" data-w="${esc(s.wid)}">✕</button></div>`).join('')||'<div class="empty">Сотрудников нет</div>'}</div>`},
- async cfg(){const r=await api('a_cfg_get');if(!r)return;const c=r.conf,FL={send:'Переводы',swap:'Обмен',p2p:'P2P',checks:'Чеки',requests:'Запросы платежа',support:'Поддержка'};
+ async cfg(){const r=await api('a_cfg_get');if(!r)return;const c=r.conf,FL={deposit:'Пополнение',withdraw:'Вывод',send:'Переводы',swap:'Обмен',p2p:'P2P',checks:'Чеки',requests:'Запросы платежа',support:'Поддержка'};
   $('#av3').innerHTML=`<div class="box"><h3>Тех. работы</h3><div class="sw2"><span>Режим техработ</span><div class="tg ${c.maint?'on':''}" id="cMaint" data-do="tgm"></div></div>${F('cMsg','Сообщение пользователям','')}</div>
   <div class="box"><h3>Разделы</h3>${Object.entries(FL).map(([k,l])=>`<div class="sw2"><span>${l}</span><div class="tg ${c.flags[k]!==false?'on':''}" data-fl="${k}" data-do="tgf"></div></div>`).join('')}</div>
-  <div class="box"><h3>Лимиты</h3>${F('cFee','Комиссия обмена, %','')}${F('cMax','Макс. перевод, USD (0 — без лимита)','','num')}</div>${B('Сохранить настройки','cfgsave')}`;
-  $('#cMsg').value=c.maintMsg;$('#cFee').value=+(c.fee*100).toFixed(3);$('#cMax').value=c.maxSend},
+  <div class="box"><h3>Лимиты</h3>${F('cFee','Комиссия обмена, %','')}${F('cMax','Макс. перевод, USD (0 — без лимита)','','num')}</div><div class="box"><h3>Пополнение и вывод</h3>${F('cDm','Мин. пополнение, USD','','num')}${F('cWm','Мин. вывод, USD','','num')}${F('cWf','Комиссия вывода, %','','num')}${F('cWd','Дневной лимит вывода, USD','','num')}${F('cWa','Ручная проверка свыше, USD','','num')}</div>${B('Сохранить настройки','cfgsave')}`;
+  $('#cMsg').value=c.maintMsg;$('#cFee').value=+(c.fee*100).toFixed(3);$('#cMax').value=c.maxSend;$('#cDm').value=c.depMin;$('#cWm').value=c.wdMin;$('#cWf').value=+(c.wdFee*100).toFixed(3);$('#cWd').value=c.wdDaily;$('#cWa').value=c.wdAutoMax},
  async sys(){const [h,e]=await Promise.all([api('a_health'),api('a_errs')]);if(!h)return;const x=h.health;
   $('#av3').innerHTML=`<div class="box"><h3>Состояние системы</h3>${kv('База (Redis)',x.redis?`<span class="up">OK · ${x.rdMs} мс</span>`:'<span class="down">нет связи</span>')}${kv('Курсы',x.rates?`<span class="up">${x.rates} монет · ${x.rtMs} мс</span>`:'<span class="down">нет данных</span>')}${kv('Вебхук бота',x.hook?'<span class="up">установлен</span>':'<span class="down">не установлен</span>')}${kv('В очереди',x.pending)}${x.hookErr?kv('Ошибка вебхука',esc(x.hookErr)):''}${kv('Node',x.node)}${kv('Регион',x.region)}${kv('Коммит',x.commit||'—')}</div>
   <div class="box"><h3>Журнал ошибок</h3>${(e?.errs||[]).map(z=>`<div class="kv"><span>${dt(z.ts)} · ${esc(z.act)}</span><b style="font-size:12px;text-align:right">${esc(z.m)}</b></div>`).join('')||'<div class="empty">Ошибок нет ✨</div>'}${S.role!=='tester'?B('Очистить журнал','errclr','sec2'):''}</div>`},
  async audit(){const r=await api('a_audit');if(!r)return;
   $('#av3').innerHTML=`<div class="list">${r.audit.map(a=>`<div class="row nc"><div class="g"><b>${esc(a.act)}</b><span class="sm">${esc(a.d)}</span></div><span class="sm" style="text-align:right">${esc(a.by)}<br>${dt(a.ts)}</span></div>`).join('')||'<div class="empty">Пусто</div>'}</div>`}
 };
+
+A.wd=async function(){const [a,b]=await Promise.all([api('a_wd_list'),api('a_solv')]);if(!a)return;
+ $('#av3').innerHTML=(b?`<div class="box"><h3>Платёжеспособность</h3><div class="sm" style="margin-bottom:6px">Долги перед пользователями и реальный баланс проекта в Crypto Pay</div>${b.solv.map(x=>`<div class="kv"><span>${x.c}</span><b class="${x.real+1e-9>=x.liab?'up':'down'}">${amt(x.liab)} / ${amt(x.real)}</b></div>`).join('')}<div class="sm" style="margin-top:6px">Формат: обязательства / в наличии. Красным — не хватает обеспечения.</div></div>`:'')+`<div class="sec">Заявки на вывод</div><div class="list">${a.wds.map(w=>`<div class="row" data-do="awd" data-id="${w.id}"><div class="g"><b>${amt(w.net)} ${w.c} <span class="sm">≈$${w.usd}</span></b><span class="sm">${esc(w.w)} · ${dt(w.ts)}${w.err?' · '+esc(w.err):''}</span></div><span class="tag ${WDS[w.st]?.[1]||''}">${WDS[w.st]?.[0]||w.st}</span></div>`).join('')||'<div class="empty">Заявок нет</div>'}</div>`;AD.wds=a.wds};
+Object.assign(H,{
+ awd(d){const w=AD.wds.find(x=>x.id===d.id);if(!w)return;const open=['review','pending'].includes(w.st);sheet(`<h3>Вывод ${amt(w.net)} ${w.c}</h3>${kv('Пользователь',esc(w.w)+' · '+w.u)}${kv('Сумма списана',amt(w.a)+' '+w.c)}${kv('Комиссия',amt(w.fee))}${kv('≈ USD','$'+w.usd)}${kv('Статус',WDS[w.st]?.[0]||w.st)}${w.err?kv('Ошибка',esc(w.err)):''}${w.why?kv('Причина',esc(w.why)):''}${open?`${B('✅ Выплатить','awdok','g',`data-id="${w.id}"`)}${F('wn','Причина отказа','')}${B('Отклонить и вернуть','awdno','rd',`data-id="${w.id}"`)}`:''}`)},
+ async awdok(d){const r=await done('a_wd_ok',{id:d.id});if(r)admin()},async awdno(d){const r=await done('a_wd_no',{id:d.id,why:v('wn')});if(r)admin()}
+});
 let AU=[];
 function uList(){const q=(AD.q||'').toLowerCase();$('#aList').innerHTML=AU.filter(u=>!q||(u.name+u.wid+u.id).toLowerCase().includes(q)).slice(0,60).map(u=>`<div class="row" data-do="auser" data-id="${u.id}"><span class="av" style="width:38px;height:38px;font-size:15px">${esc((u.name||'?')[0])}</span><div class="g"><b>${esc(u.name||'—')} ${u.banned?'<span class="tag bad">бан</span>':''}</b><span class="sm">${esc(u.wid)} · ${u.id}</span></div>${u.role!=='user'?`<span class="role ${u.role}">${ROLE[u.role]}</span>`:''}</div>`).join('')||'<div class="empty">Не найдено</div>'}
 Object.assign(H,{
@@ -418,8 +430,49 @@ Object.assign(H,{
  sgen(){const t=v('sTag').replace(/[^A-Za-z0-9_-]/g,'').slice(0,24);if(!t)return toast('Введи метку',1);const l=`https://t.me/${BOT}?start=s_${t}`;navigator.clipboard?.writeText(l);toast('Ссылка скопирована: '+l)},
  async rlset(){const r=await done('a_role_set',{to:v('rlU'),role:v('rlR')},false);if(r)admin()},async rlx(d){const r=await done('a_role_set',{to:d.w,role:'user'},false);if(r)admin()},
  tgm(d,e){e.classList.toggle('on')},tgf(d,e){e.classList.toggle('on')},
- async cfgsave(){const flags={};$$('[data-fl]').forEach(e=>flags[e.dataset.fl]=e.classList.contains('on'));const r=await done('a_cfg_set',{maint:$('#cMaint').classList.contains('on'),maintMsg:v('cMsg'),fee:v('cFee'),maxSend:v('cMax'),flags},false);if(r)admin()},
+ async cfgsave(){const flags={};$$('[data-fl]').forEach(e=>flags[e.dataset.fl]=e.classList.contains('on'));const r=await done('a_cfg_set',{maint:$('#cMaint').classList.contains('on'),maintMsg:v('cMsg'),fee:v('cFee'),maxSend:v('cMax'),depMin:v('cDm'),wdMin:v('cWm'),wdFee:v('cWf'),wdDaily:v('cWd'),wdAutoMax:v('cWa'),flags},false);if(r)admin()},
  async errclr(){const r=await done('a_errs_clear',{},false);if(r)admin()}
+});
+
+
+/* ---------- PIN и конвертер ---------- */
+const sha=async t=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('nx:'+t)))].map(b=>b.toString(16).padStart(2,'0')).join('');
+function lockUp(){if(LS.get('nx_pin','')){$('#lock').classList.add('show');$('#lk').value='';$('#lke').textContent='';setTimeout(()=>$('#lk').focus(),100)}}
+$('#lk').addEventListener('input',async e=>{const x=e.target.value;if(x.length>=4&&await sha(x)===LS.get('nx_pin','')){$('#lock').classList.remove('show');hap('success')}else if(x.length>=6){e.target.value='';$('#lke').textContent='Неверный PIN';hap('error')}});
+let hiddenAt=0;document.addEventListener('visibilitychange',()=>{if(document.hidden)hiddenAt=Date.now();else if(hiddenAt&&Date.now()-hiddenAt>30000)lockUp()});
+Object.assign(H,{
+ pin(){if(LS.get('nx_pin','')){sheet(`<h3>Отключить PIN</h3>${F('pn','Текущий PIN','')}${B('Отключить','pinoff','rd')}`);$('#pn').type='password'}else{sheet(`<h3>Установить PIN</h3><div class="sub">4–6 цифр. Запрашивается при входе и после 30 секунд в фоне. PIN хранится только на этом устройстве.</div>${F('pn','PIN','4–6 цифр')}${B('Сохранить','pinon')}`);$('#pn').type='password';$('#pn').inputMode='numeric';$('#pn').maxLength=6}},
+ async pinon(){const x=v('pn');if(!/^\d{4,6}$/.test(x))return toast('PIN: 4–6 цифр',1);LS.set('nx_pin',await sha(x));shut();render();toast('PIN установлен')},
+ async pinoff(){if(await sha(v('pn'))!==LS.get('nx_pin',''))return toast('Неверный PIN',1);LS.set('nx_pin','');shut();render();toast('PIN отключён')},
+ conv(){sheet(`<h3>Конвертер</h3>${SEL('cvk','Монета',opts('BTC'))}${F('cva','Количество','1','num')}<div id="cvo" class="box" style="margin-top:12px"></div>`);$('#cva').value=1;H.cvr()},
+ cvr(){const k=v('cvk'),a=num(v('cva')),p=P[k]?.p||0;$('#cvo').innerHTML=Object.keys(SY).map(c=>kv(c,SY[c]+(a*p*FX[c]).toLocaleString('ru-RU',{maximumFractionDigits:2}))).join('')+kv('BTC',amt(+(a*p/(P.BTC?.p||1)).toFixed(8)))},
+ txd(d){const x=S.me.tx.find(t=>String(t.ts)===d.ts);if(!x)return;const L=TYPE[x.t]||[x.t];
+  sheet(`<h3>${L[0]}</h3><div class="total" style="font-size:30px">${x.a>=0?'+':''}${amt(x.a)} ${x.c}</div><div class="sub">≈ ${fm(Math.abs(x.a)*(P[x.c]?.p||0))}</div>${kv('Дата',new Date(x.ts).toLocaleString('ru-RU'))}${x.w?kv('Контрагент',esc(x.w)):''}${x.n?kv('Комментарий',esc(x.n)):''}${kv('Номер операции',String(x.ts).slice(-8))}${B('Скопировать чек','cp','sec2',`data-t="${esc(L[0]+' '+(x.a>=0?'+':'')+x.a+' '+x.c+' · '+new Date(x.ts).toLocaleString('ru-RU')+(x.w?' · '+x.w:''))}"`)}`)}
+});
+document.addEventListener('input',e=>{if(e.target.id==='cvk'||e.target.id==='cva')H.cvr()});
+document.addEventListener('change',e=>{if(e.target.id==='cvk')H.cvr()});
+lockUp();
+
+/* ---------- пополнение, вывод, документы ---------- */
+const WDS={pending:['В обработке','wr'],review:['На проверке','wr'],done:['Выплачено','ok'],rejected:['Отклонено','bad']};
+function legalUI(){const L=S.cfg.live;$('#payRow').hidden=!S.cfg.pay;
+ $('#wnote').innerHTML=L?'💼 Кастодиальный кошелёк. Криптовалюты рискованны, средства не застрахованы.':'🧪 Учебный режим: монеты виртуальные и не имеют денежной стоимости.';
+ $('#faq').innerHTML=L?'<p class="sm" style="margin:8px 0"><b>Где хранятся мои монеты?</b><br>Балансы учитываются в Сервисе, а пополнение и вывод проходят через @CryptoBot (Crypto Pay).</p><p class="sm" style="margin:8px 0"><b>Как вывести?</b><br>«Вывести» → монета и сумма. Выплата приходит на твой аккаунт @CryptoBot (нужно нажать Start в нём). Крупные суммы проверяются вручную.</p><p class="sm" style="margin:8px 0"><b>Платёж не пришёл?</b><br>«Пополнить» → «Проверить оплату», затем напиши в поддержку.</p>':'<p class="sm" style="margin:8px 0">Учебный режим: монеты виртуальные, ввод и вывод невозможны.</p>';
+ const need=!S.me.consent;$('#consent').classList.toggle('show',need);if(need)$('#cnTxt').textContent=L?'Nexium Wallet — кастодиальный кошелёк. Мы храним твой баланс, а пополнение и вывод выполняются через @CryptoBot. Мы обрабатываем Telegram ID, имя, балансы и историю операций. Криптовалюты рискованны.':'Nexium Wallet работает в учебном режиме: монеты виртуальные. Мы обрабатываем Telegram ID, имя и историю действий в приложении.'}
+Object.assign(H,{
+ doc(d){openLink(location.origin+d.u)},
+ cntg(d,e){e.classList.toggle('on')},
+ async cnok(){if(!$('#cnTg').classList.contains('on'))return toast('Отметь согласие переключателем',1);const r=await api('consent',{accept:true});if(r)toast('Добро пожаловать!')},
+ delreq(){sheet(`<h3>Удаление данных</h3><div class="sub">Создадим обращение в поддержку. Перед удалением выведи остаток средств: после удаления аккаунт восстановить нельзя.</div>${B('Отправить запрос','delgo','rd')}`)},
+ async delgo(){const r=await done('tk_new',{subject:'Запрос на удаление данных',text:'Прошу удалить мой аккаунт и персональные данные.'})},
+ dep(){const A=S.cfg.assets||[];sheet(`<h3>Пополнить</h3><div class="sub">Оплата через @CryptoBot. Счёт действует 1 час. Минимум ≈ $${S.cfg.depMin}.</div>${SEL('dc','Монета',A.map(k=>`<option>${k}</option>`).join(''))}${F('da','Сумма','0.00','num')}<div class="sm" id="dq" style="margin-top:8px"></div>${B('Создать счёт','dogo')}<button class="btn sec2" data-do="depchk">Проверить оплату</button>`);
+  const q=()=>{const k=v('dc'),a=num(v('da'));$('#dq').textContent=a&&P[k]?'≈ '+fm(a*P[k].p):''};$('#dc').onchange=q;$('#da').oninput=q},
+ async dogo(){const r=await api('dep_new',{cur:v('dc'),amt:v('da')});if(r?.pay)sheet(`<h3>Счёт создан</h3><div class="sub">Оплати в @CryptoBot, затем вернись и нажми «Проверить оплату». Зачисление обычно происходит автоматически.</div>${B('Оплатить в @CryptoBot','lnk','',`data-u="${esc(r.pay.url)}"`)}${B('Проверить оплату','depchk','sec2')}`)},
+ async depchk(){const r=await api('dep_check');if(r){toast(r.done||'Готово');if(/Зачислено/.test(r.done||''))shut()}},
+ async wd(){const r=await api('wd_list');const A=S.cfg.assets||[];sheet(`<h3>Вывести</h3><div class="sub">Выплата придёт на твой аккаунт @CryptoBot (нужно нажать Start в этом боте). Минимум ≈ $${S.cfg.wdMin}, комиссия ${(S.cfg.wdFee*100).toFixed(2)}%, дневной лимит $${S.cfg.wdDaily}. Суммы свыше $${S.cfg.wdAutoMax} проверяются вручную.</div>${SEL('wc','Монета',A.map(k=>`<option>${k}</option>`).join(''))}${F('wa','Сумма','0.00','num')}<div class="sm" id="wq" style="margin-top:8px"></div>${B('Вывести','wdgo')}
+  <div class="lbl">Последние заявки</div>${(r?.wds||[]).map(w=>`<div class="row nc" style="margin-top:8px"><div class="g"><b>${amt(w.net)} ${w.c}</b><span class="sm">${dt(w.ts)}</span></div><span class="tag ${WDS[w.st]?.[1]||''}">${WDS[w.st]?.[0]||w.st}</span></div>`).join('')||'<div class="sm">Заявок нет</div>'}`);
+  const q=()=>{const k=v('wc'),a=num(v('wa'));$('#wq').innerHTML=`Доступно: ${amt(S.me.bal[k]||0)} ${k}`+(a?` · получишь ${amt(+(a*(1-S.cfg.wdFee)).toFixed(8))} ${k}`:'')};$('#wc').onchange=q;$('#wa').oninput=q;q()},
+ async wdgo(){const r=await done('wd_new',{cur:v('wc'),amt:v('wa')})}
 });
 
 /* ---------- навигация ---------- */
@@ -434,6 +487,7 @@ addEventListener('resize',moveInd);
  const [n]=await Promise.all([api('news_list',{},1),api('ad_list',{},1)]);
  rates();loadSp();setTimeout(moveInd,100);
  if((S.me?.alerts||[]).length)api('alerts_check',{},1);
+ if(S.cfg.pay&&S.me?.consent)api('dep_check',{},1);
  const sp=tgw?.initDataUnsafe?.start_param;
 })();
 </script></body></html>
