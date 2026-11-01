@@ -35,6 +35,7 @@ async function run(req, res) {
       const r = await game(b.action, me, b);
       if (!r) return fail('Неизвестное действие');
       if (r.err) return fail(r.err);
+      if (!isAdmin && r.case?.subs) delete r.case.subs.why;
       return ok(r);
     }
     switch (b.action) {

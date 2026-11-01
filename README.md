@@ -8,7 +8,7 @@
    Необязательно: `BOT_USERNAME` (по умолчанию NexiumWallet_bot), `CONTACT_USERNAME` (username для связи по рекламе, без @), `WELCOME_BONUS` (по умолчанию 100 USDT), `REF_BONUS_TON` (награда за друга, по умолчанию 0.1), `CHANNEL_ID` (по умолчанию `@NexiumWallet_News`), `CHAT_ID` (по умолчанию `@NexiumWalletNews_Chat`).
 4. Deploy, затем один раз открой `https://проект.vercel.app/api/setup?key=WEBHOOK_SECRET` (ставит вебхук, меню, команды и описание бота).
 5. BotFather: `/setinline` (плейсхолдер `1 TON`).
-6. **Обязательно для кейса:** добавь бота **администратором** в канал `@NexiumWallet_News` и в чат `@NexiumWalletNews_Chat`. Без этого Telegram не даёт боту проверять подписку (`getChatMember`), и кейс будет отвечать «Не удалось проверить подписку».
+6. **Обязательно для кейса:** добавь бота **администратором** в канал `@NexiumWallet_News` и в чат `@NexiumWalletNews_Chat`. Без этого Telegram не даёт боту проверять подписку (`getChatMember`), и кейс будет отвечать «Бот не может проверить подписку». Диагностика: открой `https://проект.vercel.app/api/setup?key=WEBHOOK_SECRET&check=1`, там видно статус бота в канале и чате и точную ошибку Telegram.
 
 ## Что есть
 - **Курсы**: 10 монет, живые цены Binance через серверный прокси `/api/rates` (кэш 3 сек, запасной источник CoinGecko), фиатные курсы USD/EUR/UAH/RUB/KZT/PLN/TRY. Те же цены в кошельке, рынке, обмене, трейде, P2P и боте.

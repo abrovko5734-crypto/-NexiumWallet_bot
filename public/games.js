@@ -183,7 +183,7 @@
     const task = (done, t, u, k) => `<div class="ctask ${done ? 'ok' : ''}"><span>${done ? '✅' : '⭕'}</span><div class="grow">${t}<small>${u}</small></div>${done ? '' : `<button class="chip" data-gx="sub" data-gv="${k}">Открыть</button>`}</div>`;
     return `<div class="dcase">${head('Бесплатный кейс готов!', 'Награда от 0.01 до 1 TON. Раз в 24 часа.')}
       ${ok ? '' : task(s.ch, 'Подписаться на канал', '@NexiumWallet_News', 'ch') + task(s.chat, 'Вступить в чат', '@NexiumWalletNews_Chat', 'chat')}
-      ${s.bad ? '<div class="sub2" style="margin-bottom:8px">⚠️ Не удалось проверить подписку. Попробуй ещё раз чуть позже.</div>' : ''}
+      ${s.bad ? `<div class="sub2" style="margin-bottom:8px">⚠️ Бот не смог проверить: ${[s.badCh && 'канал', s.badChat && 'чат'].filter(Boolean).join(' и ')}. Скорее всего, бот не добавлен туда администратором.${S.admin && s.why ? '<br><b>' + esc(s.why) + '</b>' : ''}</div>` : ''}
       ${ok ? '<button class="btn" data-gx="copenD">🎁 Открыть кейс</button>' : '<button class="btn" data-gx="cchk">Проверить подписку</button>'}${meta}${strip}</div>`;
   };
   async function loadCase() {
@@ -212,7 +212,7 @@
       case 'bm': { const i = $('#g-bet'), c = GS.limits[GCUR], cur = +String(i.value).replace(',', '.') || 0, bal = S.me.bal[GCUR] || 0;
         const n = v === 'min' ? c.min : v === 'half' ? cur / 2 : v === 'x2' ? cur * 2 : bal; i.value = f8(Math.min(Math.max(n, c.min), c.max, Math.max(bal, c.min))); tap(); return dPrev(); }
       case 'sub': return openLink(v === 'ch' ? CH_URL : CHAT_URL);
-      case 'cchk': { const j = await call('case_info', {}); if (j?.case) { CI = { ...j.case, at: Date.now() }; $('#bn').innerHTML = caseCard(); const s = CI.subs; toast(s.ch && s.chat ? 'Подписка подтверждена' : s.bad ? 'Не удалось проверить, попробуй позже' : (s.ch ? 'Вступи в чат' : 'Подпишись на канал'), !(s.ch && s.chat)); } return; }
+      case 'cchk': { const j = await call('case_info', {}); if (j?.case) { CI = { ...j.case, at: Date.now() }; $('#bn').innerHTML = caseCard(); const s = CI.subs; toast(s.ch && s.chat ? 'Подписка подтверждена' : s.bad ? 'Бот не может проверить подписку: он должен быть админом канала и чата' : (s.ch ? 'Вступи в чат' : 'Подпишись на канал'), !(s.ch && s.chat)); } return; }
       case 'copenD': return openDaily();
       case 'close': return shut();
       case 'cbuy': return caseSheet(v);
