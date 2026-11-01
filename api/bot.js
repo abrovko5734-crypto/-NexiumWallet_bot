@@ -1,4 +1,4 @@
-import { CUR, R, tg, getUser, save, add, log, claim, makeCheck, clean, getRates, redeemPromo, esc, nc, REF_TON, REF_MILESTONE_TON, CHANNEL_URL, CHAT_URL } from '../lib/core.js';
+import { CUR, R, tg, getUser, save, add, log, claim, makeCheck, clean, getRates, redeemPromo, esc, nc, cfg, CHANNEL_URL, CHAT_URL } from '../lib/core.js';
 const name = f => f.first_name || f.username || 'user';
 const BOT = () => process.env.BOT_USERNAME || 'NexiumWallet_bot';
 const open = () => ({ inline_keyboard: [[{ text: '💼 Открыть кошелёк', web_app: { url: process.env.APP_URL } }]] });
@@ -14,9 +14,9 @@ const hint = (q, id, title, description) => tg('answerInlineQuery', {
   results: [{ type: 'article', id, title, description, input_message_content: { message_text: 'Nexium Wallet' } }] });
 const welcome = me => ({
   parse_mode: 'HTML',
-  text: `<b>Nexium Wallet</b> — кошелёк прямо в Telegram\n\n` +
+  text: `<b>Nexium Wallet</b> · демо-кошелёк в Telegram\n\n` +
     `• 📊 реальные курсы 10 монет\n• 🔄 мгновенный обмен\n• 🤝 P2P-биржа\n• 📈 трейдинг на реальных котировках\n• 🧾 чеки и переводы по ID\n• 🎁 бесплатный кейс каждые 24 часа (0.01–1 GRAM)\n• 🎮 игры: Crash, Mines, Dice, монетка, кейсы\n• 👥 0.1 GRAM за каждого друга\n\n` +
-    `Твой ID: <code>${me.wid}</code>\n\n<i>Это демо-кошелёк с виртуальными монетами: внутренний учёт, не блокчейн. Монеты не имеют денежной стоимости, ввод и вывод невозможны.</i>`,
+    `Твой ID: <code>${me.wid}</code>\n\n🧪 <b>ДЕМО-версия.</b> Это учебный демо-кошелёк с виртуальными монетами, а не настоящий кошелёк и не обман: ничего не списывается с реальных счетов, монеты не имеют денежной стоимости, ввод и вывод невозможны.`,
   reply_markup: { inline_keyboard: [
     [{ text: '💼 Открыть кошелёк', web_app: { url: process.env.APP_URL } }],
     [{ text: '📈 Курсы', callback_data: 'rates' }, { text: '👥 Пригласить', callback_data: 'ref' }],
@@ -27,6 +27,7 @@ export default async function handler(req, res) {
   if (req.headers['x-telegram-bot-api-secret-token'] !== process.env.WEBHOOK_SECRET) return res.status(401).end();
   const u = req.body;
   try {
+    const CF = await cfg();
     if (u.message?.text?.startsWith('/')) {
       const m = u.message, me = await getUser(m.from.id, name(m.from));
       const [cmdRaw, p] = m.text.split(' '), cmd = cmdRaw.split('@')[0].toLowerCase();
@@ -37,11 +38,11 @@ export default async function handler(req, res) {
           if (rid !== me.id && !me.ref && isNew && await R('EXISTS', 'user:' + rid)) {
             const rf = await getUser(rid);
             me.ref = rid; await save(me);
-            rf.refs = (rf.refs || 0) + 1; add(rf, 'GRAM', REF_TON); log(rf, { t: 'ref', c: 'GRAM', a: REF_TON });
+            rf.refs = (rf.refs || 0) + 1; add(rf, 'GRAM', CF.ref); log(rf, { t: 'ref', c: 'GRAM', a: CF.ref });
             let extra = '';
-            if (rf.refs % 5 === 0) { add(rf, 'GRAM', REF_MILESTONE_TON); log(rf, { t: 'ref', c: 'GRAM', a: REF_MILESTONE_TON }); extra = `\n🏆 ${rf.refs} приглашённых — ещё +${REF_MILESTONE_TON} GRAM!`; }
+            if (rf.refs % 5 === 0) { add(rf, 'GRAM', CF.refMile); log(rf, { t: 'ref', c: 'GRAM', a: CF.refMile }); extra = `\n🏆 ${rf.refs} приглашённых — ещё +${CF.refMile} GRAM!`; }
             await save(rf);
-            tg('sendMessage', { chat_id: rid, text: `По вашей ссылке пришёл ${name(m.from)}. Бонус +${REF_TON} GRAM${extra}` }).catch(() => {});
+            tg('sendMessage', { chat_id: rid, text: `По вашей ссылке пришёл ${name(m.from)}. Бонус +${CF.ref} GRAM${extra}` }).catch(() => {});
           }
         }
         if (p?.startsWith('s_') && isNew && !me.src) { // метка источника рекламы: t.me/бот?start=s_МЕТКА
@@ -62,7 +63,7 @@ export default async function handler(req, res) {
         const tot = CUR.reduce((s, c) => s + (me.bal[c] || 0) * (rt[c]?.p || 0), 0);
         await tg('sendMessage', { chat_id: m.chat.id, parse_mode: 'HTML', text: rows.length ? `<b>💼 Баланс</b>\n\n${rows.join('\n')}\n\nИтого ≈ <b>$${fmt(tot)}</b>` : 'Баланс пуст. Забери ежедневный бонус в приложении.', reply_markup: open() });
       } else if (cmd === '/ref') {
-        await tg('sendMessage', { chat_id: m.chat.id, parse_mode: 'HTML', text: `<b>👥 Реферальная программа</b>\nЗа каждого друга вы получаете ${REF_TON} GRAM, а за каждые 5 друзей — ещё +${REF_MILESTONE_TON} GRAM.\nПриглашено: <b>${me.refs || 0}</b>\n\n<code>${refLink(me.id)}</code>`, reply_markup: { inline_keyboard: [[{ text: '📤 Поделиться ссылкой', url: shareUrl(me.id) }]] } });
+        await tg('sendMessage', { chat_id: m.chat.id, parse_mode: 'HTML', text: `<b>👥 Реферальная программа</b>\nЗа каждого друга вы получаете ${CF.ref} GRAM, а за каждые 5 друзей — ещё +${CF.refMile} GRAM.\nПриглашено: <b>${me.refs || 0}</b>\n\n<code>${refLink(me.id)}</code>`, reply_markup: { inline_keyboard: [[{ text: '📤 Поделиться ссылкой', url: shareUrl(me.id) }]] } });
       } else if (cmd === '/promo') {
         if (!p) await tg('sendMessage', { chat_id: m.chat.id, text: 'Отправь: /promo КОД' });
         else { const r = await redeemPromo(p, me); await tg('sendMessage', { chat_id: m.chat.id, text: r.err ? '⚠️ ' + r.err : `🎟 Промокод активирован: +${r.ok.a} ${r.ok.c}` }); }
@@ -81,7 +82,7 @@ export default async function handler(req, res) {
       if (!qq) { // пустой запрос: курсы и приглашение
         await tg('answerInlineQuery', { inline_query_id: q.id, cache_time: 0, is_personal: true, results: [
           { type: 'article', id: 'rates', title: '📈 Курсы монет', description: 'Реальные котировки', input_message_content: { message_text: await ratesText(), parse_mode: 'HTML' } },
-          { type: 'article', id: 'invite', title: '👥 Пригласить в Nexium Wallet', description: `Вы получите ${REF_TON} GRAM за друга`, input_message_content: { message_text: 'Nexium Wallet — кошелёк, обмен, P2P и трейдинг в Telegram. Заходи и получи бонус 🎁' },
+          { type: 'article', id: 'invite', title: '👥 Пригласить в Nexium Wallet', description: `Вы получите ${CF.ref} GRAM за друга`, input_message_content: { message_text: 'Nexium Wallet — кошелёк, обмен, P2P и трейдинг в Telegram. Заходи и получи бонус 🎁' },
             reply_markup: { inline_keyboard: [[{ text: 'Открыть Nexium Wallet', url: refLink(me.id) }]] } }] });
         return res.json({ ok: 1 });
       }
@@ -105,7 +106,7 @@ export default async function handler(req, res) {
         await tg('answerCallbackQuery', { callback_query_id: q.id });
         const cid = q.message?.chat?.id; if (!cid) return res.json({ ok: 1 });
         if (d === 'rates') await tg('sendMessage', { chat_id: cid, text: await ratesText(), parse_mode: 'HTML' });
-        else await tg('sendMessage', { chat_id: cid, parse_mode: 'HTML', text: `<b>👥 Твоя ссылка</b>\nЗа каждого друга +${REF_TON} GRAM, за каждые 5 друзей ещё +${REF_MILESTONE_TON} GRAM.\n\n<code>${refLink(q.from.id)}</code>`, reply_markup: { inline_keyboard: [[{ text: '📤 Поделиться', url: shareUrl(q.from.id) }]] } });
+        else await tg('sendMessage', { chat_id: cid, parse_mode: 'HTML', text: `<b>👥 Твоя ссылка</b>\nЗа каждого друга +${CF.ref} GRAM, за каждые 5 друзей ещё +${CF.refMile} GRAM.\n\n<code>${refLink(q.from.id)}</code>`, reply_markup: { inline_keyboard: [[{ text: '📤 Поделиться', url: shareUrl(q.from.id) }]] } });
       }
     }
   } catch (e) { console.error(e); }

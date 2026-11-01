@@ -1,11 +1,11 @@
 /* Nexium Wallet — мини-игры и ежедневный кейс. Работает поверх основного скрипта (общие S, api, sheet, toast…). */
 (() => {
-  Object.assign(TYPE, { game_bet: ['Ставка в игре', '🎮'], game_win: ['Выигрыш в игре', '🏆'], case: ['Ежедневный кейс', '🎁'], ref: ['Бонус за друга', '👥'] });
+  Object.assign(TYPE, { game_bet: ['Ставка в игре', '🎮'], game_win: ['Выигрыш в игре', '🏆'], case: ['Ежедневный кейс', '🎁'], ref: ['Бонус за друга', '👥'], quest: ['Задание', '✅'] });
   const CH_URL = 'https://t.me/NexiumWallet_News', CHAT_URL = 'https://t.me/NexiumWalletNews_Chat';
-  const GAMES = [['crash', '🚀', 'Crash', 'Забери выигрыш до краха'], ['mines', '💣', 'Mines', 'Открывай клетки, обходи мины'], ['dice', '🎲', 'Dice', 'Выбери шанс и множитель'], ['flip', '🪙', 'Монетка', 'Орёл или решка, x1.94'], ['cases', '📦', 'Кейсы', 'Бронза, серебро, золото']];
-  const NAMES = { crash: 'Crash', mines: 'Mines', dice: 'Dice', flip: 'Монетка', case: 'Кейс' };
-  let GS = { cases: {}, limits: { GRAM: { min: .01, max: 50 }, USDT: { min: .1, max: 1000 } } };
-  let V = 'menu', GCUR = LS.get('nx_gc', 'GRAM'), CI = null, cr = null, mn = null, MM = 3, DCH = 50, DDIR = 'under', FSIDE = 'h', crT = 0, busy = false;
+  const GAMES = [['crash', '🚀', 'Crash', 'Забери выигрыш до краха'], ['mines', '💣', 'Mines', 'Открывай клетки, обходи мины'], ['dice', '🎲', 'Dice', 'Выбери шанс и множитель'], ['flip', '🪙', 'Монетка', 'Орёл или решка, x1.94'], ['wheel', '🎡', 'Колесо', 'Крути и забирай до x10'], ['cases', '📦', 'Кейсы', 'Бронза, серебро, золото'], ['quests', '✅', 'Задания', 'Разовые награды GRAM']];
+  const NAMES = { crash: 'Crash', mines: 'Mines', dice: 'Dice', flip: 'Монетка', wheel: 'Колесо', case: 'Кейс' };
+  let GS = { cases: {}, off: false, limits: { GRAM: { min: .01, max: 50 }, USDT: { min: .1, max: 1000 } } };
+  let QS = [], WH = [], V = 'menu', GCUR = LS.get('nx_gc', 'GRAM'), CI = null, cr = null, mn = null, MM = 3, DCH = 50, DDIR = 'under', FSIDE = 'h', crT = 0, busy = false;
   if (!['GRAM', 'USDT'].includes(GCUR)) GCUR = 'GRAM';
   const f8 = x => Math.floor(x * 1e8 + 1e-6) / 1e8, A = n => amt(f8(n));
   const cls4 = (v, t) => v < t[0] ? 'c1' : v < t[1] ? 'c2' : v < t[2] ? 'c3' : 'c4';
@@ -17,7 +17,7 @@
       const r = await fetch('/api/app', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: tgw?.initData || '', action, ...d }) });
       const j = await r.json();
       if (!r.ok) { if (!quiet) toast(j.err || 'Ошибка', 1); return null; }
-      if (j.me) { S.me = j.me; S.admin = j.isAdmin; if (!quiet || j.crash?.over) render(); balUpd(); }
+      if (j.cfg) S.cfg = j.cfg; if (j.info) S.info = j.info; if (j.me) { S.me = j.me; S.admin = j.isAdmin; if (!quiet || j.crash?.over) render(); balUpd(); }
       return j;
     } catch { if (!quiet) toast('Нет связи с сервером', 1); return null; }
   }
@@ -35,12 +35,15 @@
   // ---------- меню ----------
   function menu() {
     const g = S.me.g || { n: 0, w: 0, p: {} }, h = S.me.gh || [];
-    gv().innerHTML = `<div class="gtitle">Мини-игры</div><div class="gdesc">Играй на виртуальные GRAM и USDT. Результат каждого раунда определяет сервер, шансы честные и указаны в каждой игре.</div>
+    gv().innerHTML = `<div class="gtitle">Мини-игры</div><div class="gdesc">🧪 Демо: играем на <b>виртуальные</b> GRAM и USDT, это не азартная игра на деньги. Результат каждого раунда определяет сервер, шансы указаны в каждой игре.</div>${GS.off ? '<div class="gres l">Игры временно отключены администратором</div>' : ''}
     <div class="gmenu">${GAMES.map(x => `<button class="gcard g-${x[0]}" data-gx="open" data-gv="${x[0]}"><span class="gi">${x[1]}</span><b>${x[2]}</b><small>${x[3]}</small></button>`).join('')}</div>
     <div class="gstat"><div class="st"><b>${g.n}</b><span>игр</span></div><div class="st"><b>${g.n ? Math.round(g.w / g.n * 100) : 0}%</b><span>побед</span></div>
       <div class="st"><b class="${(g.p.GRAM || 0) >= 0 ? 'up' : 'down'}">${(g.p.GRAM || 0) > 0 ? '+' : ''}${A(g.p.GRAM || 0)}</b><span>итог, GRAM</span></div></div>
-    <div class="sec">Последние раунды</div><div class="list ghist">${h.length ? h.map(x => `<div class="row"><div class="coin" style="--c:${x.pay > x.b ? '#2f8f55' : '#55627a'};width:38px;height:38px">${x.pay > x.b ? '★' : '•'}</div><div class="grow"><b>${NAMES[x.g] || x.g}</b><div class="sub">${esc(x.i || '')} · ${new Date(x.ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div></div><b class="${x.pay >= x.b ? 'up' : 'down'}">${x.pay >= x.b ? '+' : ''}${A(x.pay - x.b)} ${x.c}</b></div>`).join('') : '<div class="empty">Пока нет сыгранных раундов</div>'}</div>`;
+    ${topBox()}<div class="sec">Последние раунды</div><div class="list ghist">${h.length ? h.map(x => `<div class="row"><div class="coin" style="--c:${x.pay > x.b ? '#2f8f55' : '#55627a'};width:38px;height:38px">${x.pay > x.b ? '★' : '•'}</div><div class="grow"><b>${NAMES[x.g] || x.g}</b><div class="sub">${esc(x.i || '')} · ${new Date(x.ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div></div><b class="${x.pay >= x.b ? 'up' : 'down'}">${x.pay >= x.b ? '+' : ''}${A(x.pay - x.b)} ${x.c}</b></div>`).join('') : '<div class="empty">Пока нет сыгранных раундов</div>'}</div>`;
   }
+
+  const topBox = () => { const i = S.info; if (!i) return ''; const rows = (a, f) => a?.length ? a.map((u, n) => `<div class="row"><div class="num">${['🥇', '🥈', '🥉'][n] || n + 1}</div><div class="grow"><b>${esc(u.n)}</b></div>${f(u)}</div>`).join('') : '<div class="empty">Пока пусто</div>';
+    return `<div class="sec">Топ игроков (прибыль, GRAM)</div><div class="list lead">${rows(i.gtop, u => `<b class="${u.p >= 0 ? 'up' : 'down'}">${u.p > 0 ? '+' : ''}${A(u.p)}</b>`)}</div><div class="sec">Топ по кейсам</div><div class="list lead">${rows(i.ctop, u => `<b>${A(u.s)} GRAM · ${u.c}</b>`)}</div>`; };
 
   // ---------- CRASH ----------
   const crMult = ms => Math.floor(Math.exp(8e-5 * ms) * 100) / 100;
@@ -123,6 +126,22 @@
     ${betForm(false)}<button class="btn" data-gx="fgo">Бросить</button>`;
   }
 
+  // ---------- Колесо удачи ----------
+  const WCOL = ['#3a4559', '#1c4a78', '#2f8f55', '#52318f', '#8a6310', '#a8324a', '#0f7c8c', '#c2a633'];
+  function wheel(last) {
+    const seg = WH.length || 8, grad = Array.from({ length: seg }, (_, i) => `${WCOL[i % 8]} ${i * 360 / seg}deg ${(i + 1) * 360 / seg}deg`).join(','), rot = last ? last.rot : 0;
+    const labels = WH.map((w, i) => { const a = (i + .5) * 360 / seg; return `<div style="position:absolute;left:50%;top:50%;transform:rotate(${a}deg) translateY(-98px) rotate(${-a}deg);margin:-14px 0 0 -22px;width:44px;text-align:center;font:800 15px Montserrat;text-shadow:0 2px 6px rgba(0,0,0,.6)">x${w.m}</div>`; }).join('');
+    gv().innerHTML = `${back()}<div class="gtitle">🎡 Колесо удачи</div><div class="gdesc">Крути колесо: множитель от x0 до x10. Шансы: ${WH.map(w => `x${w.m} — ${w.p}%`).join(', ')}.</div>
+    <div class="wheelbox"><div class="wheelpin"></div><div class="wheel" id="g-wh" style="background:conic-gradient(${grad});transform:rotate(${rot}deg);transition:none">${labels}</div><div class="wheelhub">🎡</div></div>
+    ${last ? res(last.win, last.m > 0 ? `x${last.m} · +${A(last.pay)} ${GCUR}` : 'Выпал x0, повезёт в следующий раз') : ''}${betForm(false)}<button class="btn" data-gx="wgo">Крутить</button>`;
+  }
+
+  // ---------- Задания ----------
+  function quests() {
+    gv().innerHTML = `${back()}<div class="gtitle">✅ Задания</div><div class="gdesc">Выполняй разовые задания и забирай награды в GRAM (виртуальные).</div><div class="list">${QS.length ? QS.map(q => `<div class="qrow"><div class="grow">${q.claimed ? '✅ ' : ''}${esc(q.t)}<small>Награда: ${q.r} GRAM · ${q.p}/${q.n}</small><div class="qbar"><i style="width:${q.p / q.n * 100}%"></i></div></div>${q.claimed ? '<span class="sm">Получено</span>' : q.p >= q.n ? `<button class="chip go" data-gx="qclaim" data-gv="${q.id}">Забрать</button>` : q.id === 'subs' ? '<button class="chip" data-gx="sub" data-gv="ch">Канал</button>' : ''}</div>`).join('') : '<div class="empty">Загрузка…</div>'}</div>`;
+  }
+  async function loadQuests() { const j = await call('quests_list', {}, true); if (j?.quests) { QS = j.quests; if (V === 'quests') quests(); } }
+
   // ---------- Рулетка-анимация кейса ----------
   function reel(host, vals, win, fmt, cls, done) {
     const N = 44, W = 92, pos = 36, arr = Array.from({ length: N }, (_, i) => i === pos ? win : vals[Math.random() * vals.length | 0]);
@@ -158,12 +177,12 @@
   // ---------- Отрисовка вкладки ----------
   function draw() {
     if (!S.me) return; clearInterval(crT);
-    ({ menu, crash, mines, dice: () => dice(), flip: () => flip(), cases }[V] || menu)();
+    ({ menu, crash, mines, dice: () => dice(), flip: () => flip(), cases, wheel: () => wheel(), quests }[V] || menu)();
   }
   async function gOpen() {
     draw();
     const j = await call('g_state', {}, true); if (!j?.g) return;
-    GS = { ...GS, cases: j.g.cases, limits: j.g.limits };
+    GS = { ...GS, cases: j.g.cases, limits: j.g.limits, off: j.g.off }; WH = j.g.wheel || WH; call('info', {}, true).then(() => { if (V === 'menu') menu(); });
     const st = j.g.crash; if (st) cr = { t: st.t, off: st.now - Date.now(), bet: st.bet, cur: st.cur, auto: st.auto }; else if (cr && !cr.over) cr = null;
     if (j.g.mines) mn = j.g.mines; else if (mn && !mn.over) mn = null;
     if (st && V === 'menu') V = 'crash'; else if (j.g.mines && V === 'menu') V = 'mines';
@@ -171,17 +190,19 @@
   }
 
   // ---------- Ежедневный кейс (карточка на главной) ----------
+  const fh = h => h === 24 ? '24 часа' : h === 1 ? 'час' : h < 1 ? Math.round(h * 60) + ' мин' : (h % 1 ? h.toFixed(1) : h) + ' ч';
   const left = () => CI ? Math.max(0, CI.left - (Date.now() - CI.at)) : 0;
   const hms = ms => { const s = Math.ceil(ms / 1000); return [Math.floor(s / 3600), Math.floor(s % 3600 / 60), s % 60].map(x => String(x).padStart(2, '0')).join(':'); };
   window.caseCard = () => {
     if (!CI) return `<div class="dcase"><div class="hd"><div class="gift">🎁</div><div><b class="t">Ежедневный кейс</b><div class="sub2">Загрузка…</div></div></div></div>`;
+    if (CI.off) return `<div class="dcase"><div class="hd"><div class="gift">🎁</div><div><b class="t">Ежедневный кейс</b><div class="sub2">Временно отключён администратором</div></div></div></div>`;
     const l = left(), s = CI.subs, ok = s.ch && s.chat;
     const strip = `<div class="cstrip">${CI.prizes.filter((_, i) => i % 2 === 0 || i === CI.prizes.length - 1).map(p => `<span>${p.a} GRAM</span>`).join('')}</div>`;
     const head = (t, sub) => `<div class="hd"><div class="gift">🎁</div><div class="grow"><b class="t">${t}</b><div class="sub2">${sub}</div></div></div>`;
-    const meta = `<div class="cmeta"><span>Серия: <b>${CI.streak} дн.</b></span><span>Открыто: <b>${CI.total}</b></span><span>Выиграно: <b>${A(CI.sum)} GRAM</b></span></div>`;
+    const meta = `<div class="cmeta"><span>Серия: <b>${CI.streak} дн.</b></span><span>Открыто: <b>${CI.total}</b></span><span>Выиграно: <b>${A(CI.sum)} GRAM</b></span></div>${CI.hist?.length ? `<div class="chist">Последние призы: ${CI.hist.slice(0, 5).map(h => `<b>${h.a}</b>`).join(' · ')}</div>` : ''}`;
     if (l > 0) return `<div class="dcase">${head('Следующий кейс через', `<b class="ccd" style="font:800 22px Montserrat;color:#fff">${hms(l)}</b>`)}${meta}${strip}</div>`;
     const task = (done, t, u, k) => `<div class="ctask ${done ? 'ok' : ''}"><span>${done ? '✅' : '⭕'}</span><div class="grow">${t}<small>${u}</small></div>${done ? '' : `<button class="chip" data-gx="sub" data-gv="${k}">Открыть</button>`}</div>`;
-    return `<div class="dcase">${head('Бесплатный кейс готов!', 'Награда от 0.01 до 1 GRAM. Раз в 24 часа.')}
+    return `<div class="dcase">${head('Бесплатный кейс готов!', 'Награда от 0.01 до 1 GRAM. Раз в ' + fh(CI.hours || 24) + '.')}
       ${ok ? '' : task(s.ch, 'Подписаться на канал', '@NexiumWallet_News', 'ch') + task(s.chat, 'Вступить в чат', '@NexiumWalletNews_Chat', 'chat')}
       ${s.bad ? `<div class="sub2" style="margin-bottom:8px">⚠️ Бот не смог проверить: ${[s.badCh && 'канал', s.badChat && 'чат'].filter(Boolean).join(' и ')}. Скорее всего, бот не добавлен туда администратором.${S.admin && s.why ? '<br><b>' + esc(s.why) + '</b>' : ''}</div>` : ''}
       ${ok ? '<button class="btn" data-gx="copenD">🎁 Открыть кейс</button>' : '<button class="btn" data-gx="cchk">Проверить подписку</button>'}${meta}${strip}</div>`;
@@ -206,7 +227,7 @@
   document.addEventListener('click', async e => {
     const b = e.target.closest('[data-gx]'); if (!b || !S.me) return; const x = b.dataset.gx, v = b.dataset.gv;
     switch (x) {
-      case 'open': V = v; if (v === 'crash' && !cr) cr = null; draw(); return tap();
+      case 'open': V = v; if (v === 'quests') loadQuests(); if (v === 'crash' && !cr) cr = null; draw(); return tap();
       case 'back': V = 'menu'; clearInterval(crT); draw(); return tap();
       case 'cur': GCUR = v; LS.set('nx_gc', v); tap(); return draw();
       case 'bm': { const i = $('#g-bet'), c = GS.limits[GCUR], cur = +String(i.value).replace(',', '.') || 0, bal = S.me.bal[GCUR] || 0;
@@ -230,6 +251,18 @@
       case 'dd': DDIR = v; tap(); return dice();
       case 'droll': { if (busy) return; busy = true; const j = await call('dice', { bet: betVal(), cur: GCUR, chance: DCH, dir: DDIR }); if (!j) { busy = false; return; }
         const el = $('#g-roll'); let n = 0; const t = setInterval(() => { el.textContent = (Math.random() * 100).toFixed(2); if (++n > 12) { clearInterval(t); busy = false; dice(j); hap(j.win ? 'success' : 'error'); if (j.win) confetti(40); } }, 45); return; }
+      case 'wgo': { if (busy) return; busy = true; const j = await call('wheel', { bet: betVal(), cur: GCUR }); if (!j) { busy = false; return; }
+        const w = j.wheel, seg = WH.length, el = $('#g-wh'), target = 360 * 6 + (360 - (w.i + .5) * 360 / seg) + (Math.random() - .5) * (360 / seg) * .6;
+        el.style.transition = 'transform 4.2s cubic-bezier(.15,.7,.1,1)'; el.style.transform = `rotate(${target}deg)`;
+        const t = setInterval(() => { if (el.isConnected) tap(); else clearInterval(t); }, 200);
+        setTimeout(() => { clearInterval(t); busy = false; if (V === 'wheel') { wheel({ ...w, rot: target % 360 }); hap(w.win ? 'success' : 'error'); if (w.m >= 3) confetti(100); else if (w.win) confetti(40); } }, 4350); return; }
+      case 'qclaim': { const j = await call('quest_claim', { id: v }); if (j) { QS = j.quests; toast(j.done); confetti(60); quests(); } return; }
+      case 'atg': { if (!ACF) return; ACF.conf[v] = !ACF.conf[v]; adminFill(); return tap(); }
+      case 'asave': { const g = id => $('#' + id).value, c = ACF?.conf || {};
+        const j = await call('a_cfg_set', { caseHours: g('c-h'), welcome: g('c-w'), ref: g('c-r'), refMile: g('c-m'), maxBetGRAM: g('c-bg'), maxBetUSDT: g('c-bu'), games: !!c.games, cases: !!c.cases });
+        if (j) { ACF = { ...ACF, conf: j.conf }; adminFill(); toast(j.done); loadCase(); } return; }
+      case 'areset': { const to = $('#c-to').value.trim(); if (!to && !confirm('Сбросить кулдаун кейса у ВСЕХ пользователей?')) return;
+        const j = await call('a_case_reset', { to }); if (j) { toast(j.done); if (j.conf) ACF = { ...ACF, conf: j.conf }; loadCase(); } return; }
       case 'fs': FSIDE = v; tap(); return flip();
       case 'fgo': { if (busy) return; busy = true; const j = await call('flip', { bet: betVal(), cur: GCUR, side: FSIDE }); if (!j) { busy = false; return; }
         const c = $('#g-coin'); c.classList.remove('spin'); void c.offsetWidth; c.classList.add('spin'); setTimeout(() => { busy = false; flip(j); hap(j.win ? 'success' : 'error'); if (j.win) confetti(40); }, 1350); return; }
@@ -240,8 +273,35 @@
     if (e.target.id === 'g-bet') dPrev();
   });
 
+  // ---------- Админ: настройки, кулдаун кейса, статистика ----------
+  const adminBox = () => `<div class="box" id="a-cfg"><h3>⚙️ Настройки и кейс</h3><div class="sm" style="margin-bottom:10px">Кулдаун ежедневного кейса и параметры бонусов. Применяется сразу.</div>
+    <div class="lbl">Кулдаун кейса, часов (24 = раз в сутки, 0.5 = раз в 30 мин)</div><input id="c-h" inputmode="decimal">
+    <div class="two eq"><div><div class="lbl">Стартовый бонус, USDT</div><input id="c-w" inputmode="decimal"></div><div><div class="lbl">За друга, GRAM</div><input id="c-r" inputmode="decimal"></div></div>
+    <div class="two eq"><div><div class="lbl">За 5 друзей, GRAM</div><input id="c-m" inputmode="decimal"></div><div><div class="lbl">Макс. ставка GRAM</div><input id="c-bg" inputmode="decimal"></div></div>
+    <div class="lbl">Макс. ставка USDT</div><input id="c-bu" inputmode="decimal">
+    <div class="tgl"><button class="chip" data-gx="atg" data-gv="games" id="c-tg">Игры</button><button class="chip" data-gx="atg" data-gv="cases" id="c-tc">Кейс</button></div>
+    <button class="btn" data-gx="asave">Сохранить настройки</button>
+    <div class="lbl" style="margin-top:16px">Сбросить кулдаун кейса (оставь пусто — сбросить ВСЕМ)</div><input id="c-to" placeholder="Telegram ID или ID кошелька (необяз.)"><button class="btn sec2" data-gx="areset">Сбросить кулдаун</button>
+    <div class="sec" style="margin:18px 2px 10px;font-size:15px">📊 Статистика игр</div><div class="astat" id="a-st"></div></div>`;
+  let ACF = null;
+  function adminFill() {
+    if (!ACF) return; const c = ACF.conf, st = ACF.stats, set = (id, v) => { const e = $('#' + id); if (e && document.activeElement !== e) e.value = v; };
+    set('c-h', c.caseHours); set('c-w', c.welcome); set('c-r', c.ref); set('c-m', c.refMile); set('c-bg', c.maxBet.GRAM); set('c-bu', c.maxBet.USDT);
+    const tg = $('#c-tg'), tc = $('#c-tc'); if (tg) { tg.classList.toggle('on', c.games); tg.textContent = 'Игры: ' + (c.games ? 'вкл' : 'выкл'); tc.classList.toggle('on', c.cases); tc.textContent = 'Кейс: ' + (c.cases ? 'вкл' : 'выкл'); }
+    const gi = (st['in:GRAM'] || 0), go = (st['out:GRAM'] || 0), ui = (st['in:USDT'] || 0), uo = (st['out:USDT'] || 0), cell = (a, b) => `<div>${a}<b>${b}</b></div>`;
+    const a = $('#a-st'); if (a) a.innerHTML = cell('Раундов', st.rounds || 0) + cell('Ставки GRAM / выплаты', A(gi) + ' / ' + A(go)) + cell('Ставки USDT / выплаты', A(ui) + ' / ' + A(uo)) + cell('Кейсов открыто', st['case:n'] || 0) + cell('Выдано кейсами', A(st['case:sum'] || 0) + ' GRAM') + cell('Заданий / награды', (st['quest:n'] || 0) + ' / ' + A(st['quest:sum'] || 0)) + cell('Crash / Mines', (st['g:crash'] || 0) + ' / ' + (st['g:mines'] || 0)) + cell('Dice / Монетка / Колесо', (st['g:dice'] || 0) + ' / ' + (st['g:flip'] || 0) + ' / ' + (st['g:wheel'] || 0));
+  }
+  async function adminLoad() {
+    if (!S.admin) return; if (!$('#a-cfg')) $('#p-a').insertAdjacentHTML('afterbegin', adminBox());
+    const j = await call('a_cfg_get', {}, true); if (j?.conf) { ACF = j; adminFill(); }
+  }
+
+  // ---------- Настройки, видимые всем (награда за друга и т.п.) ----------
+  const applyCfg = () => { const c = S.cfg; if (!c) return; const a = $('#refA'), m = $('#refM'); if (a) a.textContent = c.ref; if (m) m.textContent = c.refMile; };
+  const _render = render; render = function () { _render(); applyCfg(); };
+
   // ---------- Подключение к основному приложению ----------
-  const _go = go; go = function (t) { _go(t); if (t === 'g') gOpen(); if (t === 'w') loadCase(); };
+  const _go = go; go = function (t) { _go(t); if (t === 'g') gOpen(); if (t === 'w') loadCase(); if (t === 'a') adminLoad(); };
   setInterval(() => {
     $$('.ccd').forEach(e => { const l = left(); if (l <= 0) { loadCase(); } else e.textContent = hms(l); });
   }, 1000);

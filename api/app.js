@@ -1,5 +1,5 @@
-import { CUR, ADMIN, FEE, R, verify, getUser, save, log, clean, add, makeCheck, PAIRS, PAYOUTS, lastPrice, priceAt, tg, getRates, redeemPromo, lock, unlock, nc } from '../lib/core.js';
-import { game } from '../lib/games.js';
+import { CUR, ADMIN, FEE, R, verify, getUser, save, log, clean, add, makeCheck, PAIRS, PAYOUTS, lastPrice, priceAt, tg, getRates, redeemPromo, lock, unlock, nc, cfg, setCfg, pubCfg } from '../lib/core.js';
+import { game, gameStats } from '../lib/games.js';
 
 const STAKE = { 7: 6, 30: 9, 90: 12 }; // дней -> % годовых
 async function find(q) {
@@ -14,7 +14,7 @@ const allAds = async () => {
   const rows = await Promise.all(ids.map(async i => { const r = await R('GET', 'ad:' + i); if (!r) { await R('SREM', 'ads', i); return null; } return JSON.parse(r); }));
   return rows.filter(Boolean).sort((a, b) => b.ts - a.ts);
 };
-const READ_ONLY = new Set(['me', 'p2p_list', 'info', 'ad_list', 'ad_click', 'g_state', 'case_info']);
+const READ_ONLY = new Set(['me', 'p2p_list', 'info', 'ad_list', 'ad_click', 'g_state', 'case_info', 'quests_list', 'a_cfg_get']);
 export default async function handler(req, res) {
   const b0 = req.body || {}, tu0 = verify(b0.initData);
   if (!tu0) return res.status(401).json({ err: 'Открой приложение через Telegram' });
@@ -26,12 +26,13 @@ async function run(req, res) {
   const b = req.body || {}, tu = verify(b.initData);
   if (!tu) return res.status(401).json({ err: 'Открой приложение через Telegram' });
   let me = await getUser(tu.id, tu.first_name || tu.username || ''); const isAdmin = String(tu.id) === ADMIN;
-  const ok = (extra = {}) => res.json({ me, isAdmin, ...extra });
+  const CFG = await cfg();
+  const ok = (extra = {}) => res.json({ me, isAdmin, cfg: pubCfg(CFG), ...extra });
   const fail = err => res.status(400).json({ err });
   if (me.banned) return fail('Аккаунт заблокирован');
   const cur = nc(String(b.cur || '').toUpperCase()), amt = clean(b.amt);
   try {
-    if (/^(g_|case_|crash_|mines_|dice$|flip$)/.test(String(b.action))) {
+    if (/^(g_|case_|crash_|mines_|dice$|flip$|wheel$|quest)/.test(String(b.action))) {
       const r = await game(b.action, me, b);
       if (!r) return fail('Неизвестное действие');
       if (r.err) return fail(r.err);
@@ -149,7 +150,9 @@ async function run(req, res) {
         us.forEach(u => { Object.entries(u.bal).forEach(([k, v]) => tot[k] = (tot[k] || 0) + v); tr += u.st?.n || 0; });
         const top = us.filter(u => u.st?.n).sort((x, y) => y.st.pnl - x.st.pnl).slice(0, 10).map(u => ({ n: u.name || '—', w: u.wid, p: u.st.pnl, t: u.st.n, r: Math.round(u.st.w / u.st.n * 100) }));
         const refs = us.filter(u => u.refs).sort((x, y) => y.refs - x.refs).slice(0, 10).map(u => ({ n: u.name || '—', r: u.refs }));
-        const info = { users: ids.length, tot, tr, top, refs }; await R('SET', 'cache:info', JSON.stringify(info), 'EX', 60);
+        const gtop = us.filter(u => u.g?.n).sort((x, y) => (y.g.p.GRAM || 0) - (x.g.p.GRAM || 0)).slice(0, 10).map(u => ({ n: u.name || '—', p: u.g.p.GRAM || 0, t: u.g.n }));
+        const ctop = us.filter(u => u.case?.n).sort((x, y) => y.case.sum - x.case.sum).slice(0, 10).map(u => ({ n: u.name || '—', s: u.case.sum, c: u.case.n }));
+        const info = { users: ids.length, tot, tr, top, refs, gtop, ctop }; await R('SET', 'cache:info', JSON.stringify(info), 'EX', 60);
         return ok({ info: { ...info, contact } });
       }
       case 'mkcheck': {
@@ -171,6 +174,19 @@ async function run(req, res) {
     }
     if (!isAdmin) return fail('Нет доступа');
     switch (b.action) {
+      case 'a_cfg_get': return ok({ conf: CFG, stats: await gameStats() });
+      case 'a_cfg_set': {
+        const r = await setCfg({ caseHours: b.caseHours, welcome: b.welcome, ref: b.ref, refMile: b.refMile, maxBetGRAM: b.maxBetGRAM, maxBetUSDT: b.maxBetUSDT,
+          ...(typeof b.games === 'boolean' ? { games: b.games } : {}), ...(typeof b.cases === 'boolean' ? { cases: b.cases } : {}) });
+        if (r.err) return fail(r.err); await R('DEL', 'cache:info'); return ok({ conf: r.cfg, done: 'Настройки сохранены' });
+      }
+      case 'a_case_reset': {
+        if (!String(b.to || '').trim()) { const r = await setCfg({ resetAll: true }); return ok({ conf: r.cfg, done: 'Кулдаун кейса сброшен для всех' }); }
+        const u = await find(b.to); if (!u) return fail('Пользователь не найден');
+        u.case = { ...(u.case || { s: 0, n: 0, sum: 0 }), t: 0 }; await save(u);
+        tg('sendMessage', { chat_id: u.id, text: '🎁 Твой ежедневный кейс снова доступен! Открой кошелёк.' }).catch(() => {});
+        return ok({ done: `Кейс доступен: ${u.wid}` });
+      }
       case 'a_stats': {
         const ids = await R('SMEMBERS', 'users'), tot = {};
         const us = await Promise.all(ids.slice(0, 300).map(i => getUser(i)));

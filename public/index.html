@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Nexium</title>
+<title>Nexium Wallet · Демо</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="stylesheet" href="/games.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
@@ -136,10 +136,11 @@ textarea{width:100%;background:rgba(0,0,0,.28);border:1.5px solid transparent;co
 </style></head><body>
 <div class="bg"><i></i><i></i><i></i></div><canvas id="fx"></canvas>
 <section class="pane on" id="p-w">
- <div class="top"><div class="av" id="av">N</div><div class="who"><b id="nm">Nexium</b><span id="lvl"></span></div><button class="ibtn" id="eye" style="margin-left:auto">👁</button><button class="pill" id="widBtn">ID <b id="wid">…</b></button></div>
+ <div class="top"><div class="av" id="av">N</div><div class="who"><b id="nm">Nexium</b><span id="lvl"></span></div><span class="demo">ДЕМО</span><button class="ibtn" id="eye" style="margin-left:6px">👁</button><button class="pill" id="widBtn">ID <b id="wid">…</b></button></div>
  <div class="tick" id="tick"></div>
  <div class="hero"><img class="fl" src="/icons/btc.svg" alt=""><img class="fl" src="/icons/eth.svg" alt=""><img class="fl" src="/icons/gram.svg" alt="">
   <div class="sub">Общий баланс</div><div class="total sk" id="total">00000</div><div class="sub" id="btc">&nbsp;</div><div class="cur" id="curs"></div></div>
+ <div class="demoLine">🧪 Демо-кошелёк: монеты виртуальные, это не реальные деньги и не обман</div>
  <div class="acts">
   <button class="act" data-a="send"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Отправить</button>
   <button class="act" data-a="recv"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>Получить</button>
@@ -191,7 +192,7 @@ textarea{width:100%;background:rgba(0,0,0,.28);border:1.5px solid transparent;co
 <section class="pane" id="p-m">
  <div class="prof"><div class="ln"><div class="av" id="av2">N</div><div class="grow"><b id="nm2" style="font:700 17px Montserrat"></b><div class="sub" id="wid2"></div></div><span class="lv" id="lv2">LVL 1</span></div>
   <div class="bar"><i id="xpb" style="width:0"></i></div><div class="sub" id="xpt" style="margin-top:6px"></div></div>
- <div class="box"><h3>Реферальная программа</h3><div class="sm" style="margin-bottom:12px">За каждого друга вы получаете 0.1 GRAM, а за каждые 5 друзей — ещё +0.5 GRAM. Приглашено: <b id="rc" style="color:#fff">0</b></div>
+ <div class="box"><h3>Реферальная программа</h3><div class="sm" style="margin-bottom:12px">За каждого друга вы получаете <b id="refA" style="color:#fff">0.1</b> GRAM, а за каждые 5 друзей — ещё +<b id="refM" style="color:#fff">0.5</b> GRAM. Приглашено: <b id="rc" style="color:#fff">0</b></div>
   <div class="two eq"><button class="btn" id="refShare">Поделиться</button><button class="btn sec2" id="refBtn">Скопировать</button></div></div>
  <div class="box"><h3>Стейкинг (Earn)</h3><div id="stk"></div><button class="btn" data-a="stake" style="margin-top:10px">Новый стейк</button></div>
  <div class="box"><h3>Промокод</h3><input id="pcode" placeholder="Введи код" autocapitalize="characters"><button class="btn" id="pBtn">Активировать</button></div>
@@ -203,7 +204,7 @@ textarea{width:100%;background:rgba(0,0,0,.28);border:1.5px solid transparent;co
  <div class="box"><div class="lbl">Акцентный цвет</div><div class="sw" id="sw"></div><div class="lbl">Валюта баланса</div><div class="chips" id="curs2"></div><div class="lbl">Вибрация</div><div class="chips"><button class="chip" id="haptBtn">Вкл</button></div></div>
  <div id="adv"></div>
  <div class="sec">О проекте</div>
- <div class="warn">Nexium Wallet — демо-кошелёк с <b>виртуальными</b> монетами. Это внутренний учёт, а не блокчейн: монеты не имеют денежной стоимости, их нельзя ввести или вывести. Курсы реальные, сделки, стейкинг и P2P игровые. Это развлечение, не инвестиции.</div>
+ <div class="warn"><b>🧪 ДЕМО-версия.</b> Nexium Wallet — это демонстрационный кошелёк, а не настоящий и не фейк-сервис с обещанием заработка: все монеты <b>виртуальные</b>. Это внутренний учёт, а не блокчейн: монеты не имеют денежной стоимости, их нельзя ввести или вывести. Курсы реальные, сделки, стейкинг и P2P игровые. Это развлечение, не инвестиции.</div>
 </section>
 
 <section class="pane" id="p-a">
@@ -266,7 +267,7 @@ function confetti(n=110){const cv=$('#fx'),x=cv.getContext('2d');cv.width=innerW
 async function api(action,d={}){
  try{const r=await fetch('/api/app',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:tgw?.initData||'',action,...d})});
  const j=await r.json();if(!r.ok){toast(j.err||'Ошибка',1);return null}
- if(j.info)S.info=j.info;if(j.ads&&action==='ad_list')S.ads=j.ads;if(j.me){S.me=j.me;S.admin=j.isAdmin}render();return j}catch{toast('Нет связи с сервером',1)}}
+ if(j.info)S.info=j.info;if(j.ads&&action==='ad_list')S.ads=j.ads;if(j.cfg)S.cfg=j.cfg;if(j.me){S.me=j.me;S.admin=j.isAdmin}render();return j}catch{toast('Нет связи с сервером',1)}}
 async function rates(){
  try{const j=await(await fetch('/api/rates')).json();if(j.p){P=j.p;if(j.fx)FX={...FX,...j.fx};if(j.src&&$('#rsrc'))$('#rsrc').textContent='Курсы в реальном времени · '+j.src;
   const v=P[T.c]?.p;if(v&&$('#p-t').classList.contains('on')){T.pts.push(v);T.pts=T.pts.slice(-80);if(T.kind==='candle'&&T.k.length){const l=T.k[T.k.length-1];l[3]=v;l[1]=Math.max(l[1],v);l[2]=Math.min(l[2],v)}chart()}
@@ -455,13 +456,13 @@ document.addEventListener('click',async e=>{
  if(id==='wBtn')return done('a_setwid',{to:$('#wTo').value,wid:$('#wNew').value});
  if(id==='bOn')return done('a_ban',{to:$('#bTo').value,on:true});
  if(id==='bOff')return done('a_ban',{to:$('#bTo').value,on:false});
- if(id==='okTerms'){LS.set('nx_ok','1');shut()}
+ if(id==='okTerms'){LS.set('nx_ok2','1');shut()}
 });
 $('#gCur').innerHTML=opts('USDT');$('#prK').innerHTML=opts('USDT');
 setInterval(()=>{let due=0;$$('.cd').forEach(e=>{const s=Math.ceil((+e.dataset.e-Date.now())/1000);if(s<=0){e.textContent='расчёт…';due=1}else e.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')});
  if(due&&!window.stl){window.stl=1;api('settle').then(r=>{window.stl=0;const t=r?.me.done?.[0];if(t&&Date.now()-t.exp<20000){toast('Сделка закрыта: '+({win:'выигрыш +'+amt(t.pay-t.st),lose:'проигрыш',tie:'ничья'})[t.r],t.r==='lose');if(t.r==='win')confetti(120)}})}},1000);
 setInterval(loadK,12000);setInterval(loadSp,300000);setInterval(()=>{if($('#p-w').classList.contains('on'))api('ad_list')},90000);addEventListener('resize',moveInd);
 drawChips();rates();loadSp();api('settle').then(()=>{api('info');api('ad_list')});setTimeout(moveInd,300);
-if(!LS.get('nx_ok',''))sheet(`<h3>Добро пожаловать</h3><div class="warn" style="margin-bottom:14px">Nexium Wallet — демо-кошелёк с <b>виртуальными</b> монетами. Монеты не имеют денежной стоимости, их нельзя ввести или вывести. Курсы реальные, а обмен, трейд, стейкинг и P2P — игра на виртуальном балансе. Каждый день можно открыть бесплатный кейс с наградой до 1 GRAM, а ещё есть игры Crash, Mines, Dice и другие.</div><button class="btn" id="okTerms">Понятно</button>`);
+if(!LS.get('nx_ok2',''))sheet(`<h3>🧪 Добро пожаловать в демо</h3><div class="warn" style="margin-bottom:14px"><b>Nexium Wallet — это ДЕМО-кошелёк.</b> Монеты виртуальные: они не имеют денежной стоимости, их нельзя ввести или вывести, ничего не списывается с реальных счетов. Курсы реальные, а обмен, трейд, стейкинг, P2P и игры — развлечение на виртуальном балансе. Каждый день можно открыть бесплатный кейс (0.01–1 GRAM), выполнять задания и играть в Crash, Mines, Dice и Колесо.</div><button class="btn" id="okTerms">Понятно</button>`);
 </script>
 <script src="/games.js"></script></body></html>

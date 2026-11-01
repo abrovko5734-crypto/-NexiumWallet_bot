@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   const c = await tg('setMyCommands', { commands: [
     { command: 'start', description: 'Главное меню' }, { command: 'rates', description: 'Курсы монет' }, { command: 'balance', description: 'Мой баланс' },
     { command: 'case', description: 'Ежедневный кейс' }, { command: 'games', description: 'Мини-игры' }, { command: 'ref', description: 'Пригласить друзей' }, { command: 'promo', description: 'Активировать промокод' }, { command: 'help', description: 'Помощь' }] });
-  const d = await tg('setMyShortDescription', { short_description: 'Кошелёк с реальными курсами, игры, обмен, P2P и ежедневный кейс до 1 GRAM 🎁' });
-  const e = await tg('setMyDescription', { description: 'Nexium Wallet — кошелёк в Telegram с реальными курсами 10 монет, мгновенным обменом, P2P-биржей, трейдингом и чеками. Ежедневный кейс (0.01–1 GRAM), мини-игры Crash, Mines, Dice и реферальная программа: 0.1 GRAM за друга. Демо с виртуальными монетами.' });
+  const d = await tg('setMyShortDescription', { short_description: 'ДЕМО-кошелёк (виртуальные монеты): реальные курсы, игры, ежедневный кейс до 1 GRAM 🎁' });
+  const e = await tg('setMyDescription', { description: 'Nexium Wallet — ДЕМО-кошелёк в Telegram. Это не настоящий кошелёк: все монеты виртуальные, ввод и вывод невозможны. Реальные курсы Gram (бывш. Toncoin) и других монет, обмен, P2P, трейдинг, мини-игры (Crash, Mines, Dice, Колесо), задания и бесплатный кейс каждые 24 часа (0.01–1 GRAM) за подписку на канал и чат.' });
   res.json({ webhook: a, menu: b, commands: c, short: d, desc: e });
 }
