@@ -33,7 +33,7 @@ async function run(req, res) {
   if (me.banned) return fail('Аккаунт заблокирован');
   const cur = nc(String(b.cur || '').toUpperCase()), amt = clean(b.amt);
   try {
-    if (/^(g_|case_|crash_|mines_|dice$|flip$|wheel$|quest)/.test(String(b.action))) {
+    if (/^(g_|case_|crash_|mines_|dice$|flip$|wheel$|upgrade$|quest)/.test(String(b.action))) {
       const r = await game(b.action, me, b);
       if (!r) return fail('Неизвестное действие');
       if (r.err) return fail(r.err);

@@ -2,10 +2,10 @@
 (() => {
   Object.assign(TYPE, { game_bet: ['Ставка в игре', '🎮'], game_win: ['Выигрыш в игре', '🏆'], case: ['Ежедневный кейс', '🎁'], ref: ['Бонус за друга', '👥'], quest: ['Задание', '✅'] });
   const CH_URL = 'https://t.me/NexiumWallet_News', CHAT_URL = 'https://t.me/NexiumWalletNews_Chat';
-  const GAMES = [['crash', '🚀', 'Crash', 'Забери выигрыш до краха'], ['mines', '💣', 'Mines', 'Открывай клетки, обходи мины'], ['dice', '🎲', 'Dice', 'Выбери шанс и множитель'], ['flip', '🪙', 'Монетка', 'Орёл или решка, x1.94'], ['wheel', '🎡', 'Колесо', 'Крути и забирай до x10'], ['cases', '📦', 'Кейсы', 'Бронза, серебро, золото'], ['quests', '✅', 'Задания', 'Разовые награды GRAM']];
-  const NAMES = { crash: 'Crash', mines: 'Mines', dice: 'Dice', flip: 'Монетка', wheel: 'Колесо', case: 'Кейс' };
+  const GAMES = [['crash', '🚀', 'Crash', 'Забери выигрыш до краха'], ['mines', '💣', 'Mines', 'Открывай клетки, обходи мины'], ['dice', '🎲', 'Dice', 'Выбери шанс и множитель'], ['flip', '🪙', 'Монетка', 'Орёл или решка, x1.94'], ['wheel', '🎡', 'Колесо', 'Крути и забирай до x10'], ['upgrade', '🔼', 'Апгрейдер', 'Умножь ставку до x100'], ['cases', '📦', 'Кейсы', 'Бронза, серебро, золото'], ['quests', '✅', 'Задания', 'Разовые награды GRAM']];
+  const NAMES = { crash: 'Crash', mines: 'Mines', dice: 'Dice', flip: 'Монетка', wheel: 'Колесо', upgrade: 'Апгрейдер', case: 'Кейс' };
   let GS = { cases: {}, off: false, limits: { GRAM: { min: .01, max: 50 }, USDT: { min: .1, max: 1000 } } };
-  let QS = [], WH = [], V = 'menu', GCUR = LS.get('nx_gc', 'GRAM'), CI = null, cr = null, mn = null, MM = 3, DCH = 50, DDIR = 'under', FSIDE = 'h', crT = 0, busy = false;
+  let UM = 2, UROT = 0, QS = [], WH = [], V = 'menu', GCUR = LS.get('nx_gc', 'GRAM'), CI = null, cr = null, mn = null, MM = 3, DCH = 50, DDIR = 'under', FSIDE = 'h', crT = 0, busy = false;
   if (!['GRAM', 'USDT'].includes(GCUR)) GCUR = 'GRAM';
   const f8 = x => Math.floor(x * 1e8 + 1e-6) / 1e8, A = n => amt(f8(n));
   const cls4 = (v, t) => v < t[0] ? 'c1' : v < t[1] ? 'c2' : v < t[2] ? 'c3' : 'c4';
@@ -136,6 +136,23 @@
     ${last ? res(last.win, last.m > 0 ? `x${last.m} · +${A(last.pay)} ${GCUR}` : 'Выпал x0, повезёт в следующий раз') : ''}${betForm(false)}<button class="btn" data-gx="wgo">Крутить</button>`;
   }
 
+  // ---------- Апгрейдер ----------
+  const UMS = [1.2, 1.5, 2, 3, 5, 10, 25, 50, 100], uCh = m => Math.floor(97 / m * 100) / 100;
+  function upgrader(last) {
+    const ch = uCh(UM), C = 2 * Math.PI * 90, arc = ch / 100 * C;
+    gv().innerHTML = `${back()}<div class="gtitle">🔼 Апгрейдер</div><div class="gdesc">Выбери множитель. Чем он выше, тем меньше зелёный сектор. Стрелка остановится в случайной точке: попала в зелёную зону, значит апгрейд удался и ставка умножается.</div>
+    <div class="upbox"><svg viewBox="0 0 220 220"><circle cx="110" cy="110" r="90" fill="none" stroke="rgba(255,95,109,.45)" stroke-width="16"/>
+      <circle cx="110" cy="110" r="90" fill="none" stroke="#4fd37c" stroke-width="16" stroke-linecap="butt" stroke-dasharray="${Math.max(arc, 1.5)} ${C}" transform="rotate(-90 110 110)"/></svg>
+      <div class="uparrow" id="g-ua" style="transform:rotate(${UROT}deg);transition:none"><i></i></div>
+      <div class="upc"><b>${ch}%</b><span>шанс</span></div></div>
+    ${last ? res(last.win, last.win ? `Апгрейд x${last.mult} удался! +${A(last.pay)} ${GCUR}` : `Не повезло: выпало ${last.roll.toFixed(2)}, нужно меньше ${last.chance}`) : ''}
+    <div class="chips" style="flex-wrap:wrap">${UMS.map(m => `<button class="chip ${m === UM ? 'on' : ''}" data-gx="umul" data-gv="${m}">x${m}</button>`).join('')}</div>
+    <div class="dstat"><div>Шанс<b>${ch}%</b></div><div>Множитель<b>x${UM}</b></div><div>Выигрыш<b id="u-p">–</b></div></div>
+    ${betForm(false)}<button class="btn" data-gx="ugo">Апгрейд</button>`;
+    uPrev();
+  }
+  function uPrev() { const b = +String($('#g-bet')?.value || 0).replace(',', '.') || 0, p = $('#u-p'); if (p) p.textContent = b ? A(b * UM) + ' ' + GCUR : '–'; }
+
   // ---------- Задания ----------
   function quests() {
     gv().innerHTML = `${back()}<div class="gtitle">✅ Задания</div><div class="gdesc">Выполняй разовые задания и забирай награды в GRAM (виртуальные).</div><div class="list">${QS.length ? QS.map(q => `<div class="qrow"><div class="grow">${q.claimed ? '✅ ' : ''}${esc(q.t)}<small>Награда: ${q.r} GRAM · ${q.p}/${q.n}</small><div class="qbar"><i style="width:${q.p / q.n * 100}%"></i></div></div>${q.claimed ? '<span class="sm">Получено</span>' : q.p >= q.n ? `<button class="chip go" data-gx="qclaim" data-gv="${q.id}">Забрать</button>` : q.id === 'subs' ? '<button class="chip" data-gx="sub" data-gv="ch">Канал</button>' : ''}</div>`).join('') : '<div class="empty">Загрузка…</div>'}</div>`;
@@ -177,7 +194,7 @@
   // ---------- Отрисовка вкладки ----------
   function draw() {
     if (!S.me) return; clearInterval(crT);
-    ({ menu, crash, mines, dice: () => dice(), flip: () => flip(), cases, wheel: () => wheel(), quests }[V] || menu)();
+    ({ menu, crash, mines, dice: () => dice(), flip: () => flip(), cases, wheel: () => wheel(), upgrade: () => upgrader(), quests }[V] || menu)();
   }
   async function gOpen() {
     draw();
@@ -271,6 +288,12 @@
         if (j) { ACF = { ...ACF, conf: j.conf }; adminFill(); toast(j.done); loadCase(); } return; }
       case 'areset': { const to = $('#c-to').value.trim(); if (!to && !confirm('Сбросить кулдаун кейса у ВСЕХ пользователей?')) return;
         const j = await call('a_case_reset', { to }); if (j) { toast(j.done); if (j.conf) ACF = { ...ACF, conf: j.conf }; loadCase(); } return; }
+      case 'umul': UM = +v; tap(); return upgrader();
+      case 'ugo': { if (busy) return; busy = true; const j = await call('upgrade', { bet: betVal(), cur: GCUR, mult: UM }); if (!j) { busy = false; return; }
+        const u = j.up, el = $('#g-ua'), target = 360 * 5 + u.roll / 100 * 360;
+        el.style.transition = 'none'; el.style.transform = 'rotate(0deg)'; void el.offsetWidth; el.style.transition = 'transform 3.6s cubic-bezier(.15,.7,.1,1)'; el.style.transform = `rotate(${target}deg)`;
+        const t = setInterval(() => { if (el.isConnected) tap(); else clearInterval(t); }, 180);
+        setTimeout(() => { clearInterval(t); busy = false; if (V === 'upgrade') { UROT = u.roll / 100 * 360; upgrader(u); hap(u.win ? 'success' : 'error'); if (u.win) confetti(u.mult >= 5 ? 120 : 50); } }, 3750); return; }
       case 'fs': FSIDE = v; tap(); return flip();
       case 'fgo': { if (busy) return; busy = true; const j = await call('flip', { bet: betVal(), cur: GCUR, side: FSIDE }); if (!j) { busy = false; return; }
         const c = $('#g-coin'); c.classList.remove('spin'); void c.offsetWidth; c.classList.add('spin'); setTimeout(() => { busy = false; flip(j); hap(j.win ? 'success' : 'error'); if (j.win) confetti(40); }, 1350); return; }
@@ -278,7 +301,7 @@
   });
   document.addEventListener('input', e => {
     if (e.target.id === 'g-ch') { DCH = +e.target.value; $('#d-ch').textContent = DCH + '%'; $('#d-m').textContent = 'x' + dMult(DCH).toFixed(2); const ch = $$('[data-gx="dd"]'); ch[0].textContent = 'Меньше ' + DCH.toFixed(2); ch[1].textContent = 'Больше или = ' + (100 - DCH).toFixed(2); dPrev(); }
-    if (e.target.id === 'g-bet') dPrev();
+    if (e.target.id === 'g-bet') { dPrev(); uPrev(); }
   });
 
   // ---------- Админ: настройки, кулдаун кейса, статистика ----------
@@ -307,7 +330,7 @@
     set('c-h', c.caseHours); set('c-w', c.welcome); set('c-r', c.ref); set('c-m', c.refMile); set('c-bg', c.maxBet.GRAM); set('c-bu', c.maxBet.USDT);
     const tg = $('#c-tg'), tc = $('#c-tc'); if (tg) { tg.classList.toggle('on', c.games); tg.textContent = 'Игры: ' + (c.games ? 'вкл' : 'выкл'); tc.classList.toggle('on', c.cases); tc.textContent = 'Кейс: ' + (c.cases ? 'вкл' : 'выкл'); }
     const gi = (st['in:GRAM'] || 0), go = (st['out:GRAM'] || 0), ui = (st['in:USDT'] || 0), uo = (st['out:USDT'] || 0), cell = (a, b) => `<div>${a}<b>${b}</b></div>`;
-    const a = $('#a-st'); if (a) a.innerHTML = cell('Раундов', st.rounds || 0) + cell('Ставки GRAM / выплаты', A(gi) + ' / ' + A(go)) + cell('Ставки USDT / выплаты', A(ui) + ' / ' + A(uo)) + cell('Кейсов открыто', st['case:n'] || 0) + cell('Выдано кейсами', A(st['case:sum'] || 0) + ' GRAM') + cell('Заданий / награды', (st['quest:n'] || 0) + ' / ' + A(st['quest:sum'] || 0)) + cell('Crash / Mines', (st['g:crash'] || 0) + ' / ' + (st['g:mines'] || 0)) + cell('Dice / Монетка / Колесо', (st['g:dice'] || 0) + ' / ' + (st['g:flip'] || 0) + ' / ' + (st['g:wheel'] || 0));
+    const a = $('#a-st'); if (a) a.innerHTML = cell('Раундов', st.rounds || 0) + cell('Ставки GRAM / выплаты', A(gi) + ' / ' + A(go)) + cell('Ставки USDT / выплаты', A(ui) + ' / ' + A(uo)) + cell('Кейсов открыто', st['case:n'] || 0) + cell('Выдано кейсами', A(st['case:sum'] || 0) + ' GRAM') + cell('Заданий / награды', (st['quest:n'] || 0) + ' / ' + A(st['quest:sum'] || 0)) + cell('Crash / Mines', (st['g:crash'] || 0) + ' / ' + (st['g:mines'] || 0)) + cell('Dice / Монетка / Колесо / Апгрейдер', (st['g:dice'] || 0) + ' / ' + (st['g:flip'] || 0) + ' / ' + (st['g:wheel'] || 0) + ' / ' + (st['g:upgrade'] || 0));
   }
   async function adminLoad() {
     if (!S.admin) return; if (!$('#a-cfg')) $('#p-a').insertAdjacentHTML('afterbegin', adminBox() + adminBox2());
