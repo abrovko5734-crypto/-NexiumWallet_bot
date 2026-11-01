@@ -1,4 +1,5 @@
-import { LIVE, CUR, R, tg, getUser, save, claim, makeCheck, clean, getRates, nc, cfg, roleOf, ROLES, errlog } from '../lib/core.js';
+import { LIVE, CUR, R, tg, getUser, save, claim, makeCheck, clean, getRates, nc, cfg, roleOf, ROLES, errlog, TON_ON, TON_ADDR, CONTACT, CONTACT_URL, PAY_ON } from '../lib/core.js';
+import { tonLink } from '../lib/ton.js';
 const name = f => f.first_name || f.username || 'user';
 const BOT = () => process.env.BOT_USERNAME || 'NexiumWallet_bot';
 const open = (t = '💎 Открыть кошелёк') => ({ inline_keyboard: [[{ text: t, web_app: { url: process.env.APP_URL } }]] });
@@ -14,7 +15,7 @@ const hint = (q, id, title, description) => tg('answerInlineQuery', {
   results: [{ type: 'article', id, title, description, input_message_content: { message_text: 'Nexium Wallet' } }] });
 const welcome = me => ({
   parse_mode: 'HTML',
-  text: `<b>💎 Nexium Wallet</b>\n\n• 📊 реальные курсы 10 монет\n• 🔄 мгновенный обмен\n• 🤝 P2P-биржа\n• 🧾 чеки, переводы и запросы платежа\n• 🔔 ценовые оповещения\n• 📒 адресная книга\n• 🎫 поддержка прямо в приложении\n\nТвой ID: <code>${me.wid}</code>\n\n${LIVE ? '💼 Кастодиальный кошелёк: пополнение и вывод через @CryptoBot. Криптовалюты рискованны. Продолжая, ты принимаешь /terms и /privacy.' : '🧪 <b>Учебный режим.</b> Монеты виртуальные, ввод и вывод невозможны.'}`,
+  text: `<b>💎 Nexium Wallet</b>\n\n• 📊 реальные курсы 10 монет\n• 🔄 мгновенный обмен\n• 🤝 P2P-биржа\n• 🧾 чеки, переводы и запросы платежа\n• 🔔 ценовые оповещения\n• 📒 адресная книга\n• ⬇️ пополнение через Tonkeeper, ⬆️ вывод через администратора\n• 🎫 поддержка прямо в приложении\n\nТвой ID: <code>${me.wid}</code>\n\n${LIVE ? '💼 Кастодиальный кошелёк: пополнение переводом на Tonkeeper, вывод через ' + CONTACT + '. Криптовалюты рискованны. Продолжая, ты принимаешь /terms и /privacy.' : '🧪 <b>Учебный режим.</b> Монеты виртуальные, ввод и вывод невозможны.'}`,
   reply_markup: { inline_keyboard: [
     [{ text: '💎 Открыть кошелёк', web_app: { url: process.env.APP_URL } }],
     [{ text: '📈 Курсы', callback_data: 'rates' }, { text: '👥 Пригласить', callback_data: 'ref' }],
@@ -58,6 +59,23 @@ export default async function handler(req, res) {
         await tg('sendMessage', { chat_id: m.chat.id, parse_mode: 'HTML', text: `<b>👥 Реферальная программа</b>\nДелись ссылкой с друзьями.\nПриглашено: <b>${me.refs || 0}</b>\n\n<code>${refLink(me.id)}</code>`, reply_markup: { inline_keyboard: [[{ text: '📤 Поделиться ссылкой', url: shareUrl(me.id) }]] } });
       } else if (cmd === '/privacy' || cmd === '/terms') {
         await tg('sendMessage', { chat_id: m.chat.id, text: cmd === '/privacy' ? 'Политика конфиденциальности' : 'Условия использования', reply_markup: { inline_keyboard: [[{ text: '📄 Открыть', url: process.env.APP_URL + (cmd === '/privacy' ? '/privacy' : '/terms') }]] } });
+      } else if (cmd === '/deposit') {
+        if (!LIVE) await tg('sendMessage', { chat_id: m.chat.id, text: 'Сейчас учебный режим: пополнение недоступно.' });
+        else if (!TON_ON && !PAY_ON) await tg('sendMessage', { chat_id: m.chat.id, text: 'Пополнение пока не настроено. Напиши ' + CONTACT, reply_markup: { inline_keyboard: [[{ text: '✉️ Написать ' + CONTACT, url: CONTACT_URL }]] } });
+        else {
+          const kb = [[{ text: '💎 Открыть кошелёк', web_app: { url: process.env.APP_URL } }]];
+          if (TON_ON) kb.unshift([{ text: '💎 Открыть в Tonkeeper', url: tonLink(me.wid) }]);
+          await tg('sendMessage', { chat_id: m.chat.id, parse_mode: 'HTML', reply_markup: { inline_keyboard: kb },
+            text: TON_ON ? `<b>⬇️ Пополнение через Tonkeeper</b>\n\nОтправь TON (или USDT в сети TON) на адрес:\n<code>${TON_ADDR}</code>\n\n⚠️ Обязательно укажи комментарий (memo):\n<code>${me.wid}</code>\n\nTON зачисляется автоматически, обычно за минуту. Для USDT и спорных случаев: приложение → «Пополнить» → «Я перевёл(а)».` : '<b>⬇️ Пополнение</b>\n\nОткрой приложение → «Пополнить» и оплати счёт в @CryptoBot.' });
+        }
+      } else if (cmd === '/withdraw' || cmd === '/contact') {
+        const wd = cmd === '/withdraw';
+        await tg('sendMessage', { chat_id: m.chat.id, parse_mode: 'HTML', reply_markup: { inline_keyboard: [[{ text: '✉️ Написать ' + CONTACT, url: CONTACT_URL }], [{ text: '💎 Открыть кошелёк', web_app: { url: process.env.APP_URL } }]] },
+          text: wd ? `<b>⬆️ Вывод средств</b>\n\n1. Приложение → «Вывести» → монета, сумма и адрес кошелька (например, Tonkeeper).\n2. Нажми «Написать ${CONTACT}» — сообщение с данными заявки уже готово.\n3. После проверки выплата придёт на твой адрес, а тебе придёт уведомление.` : `Связь с администратором: ${CONTACT}\nПо вопросам вывода, пополнения и работы кошелька.` });
+      } else if (cmd === '/history') {
+        const NM = { in: 'Получено', out: 'Отправлено', check_in: 'Чек активирован', check_out: 'Чек списан', swap_in: 'Обмен (получено)', swap_out: 'Обмен (отдано)', p2p_buy: 'P2P покупка', p2p_sell: 'P2P продажа', admin: 'Корректировка', deposit: 'Пополнение', withdraw: 'Вывод', withdraw_back: 'Возврат вывода' };
+        const rows = (me.tx || []).slice(0, 10).map(x => `${x.a >= 0 ? '🟢' : '🔴'} ${NM[x.t] || x.t}: <b>${x.a > 0 ? '+' : ''}${x.a} ${x.c}</b>  <i>${new Date(x.ts).toLocaleDateString('ru-RU')}</i>`);
+        await tg('sendMessage', { chat_id: m.chat.id, parse_mode: 'HTML', text: rows.length ? '<b>🧾 Последние операции</b>\n\n' + rows.join('\n') : 'Операций пока нет.', reply_markup: open() });
       } else if (cmd === '/id') {
         await tg('sendMessage', { chat_id: m.chat.id, parse_mode: 'HTML', text: `Твой ID в кошельке: <code>${me.wid}</code>\nTelegram ID: <code>${me.id}</code>\nРоль: ${ROLES[await roleOf(me.id)]}` });
       } else if (cmd === '/support') {
@@ -69,7 +87,7 @@ export default async function handler(req, res) {
         const r = await roleOf(me.id);
         await tg('sendMessage', { chat_id: m.chat.id, text: r === 'user' ? 'У тебя нет доступа к панели персонала.' : `🛡 Ты: ${ROLES[r]}. Панель — вкладка «Staff» в приложении.`, reply_markup: r === 'user' ? undefined : open('🛡 Открыть панель') });
       } else if (cmd === '/help') {
-        await tg('sendMessage', { chat_id: m.chat.id, text: '/start — главное меню\n/rates — курсы\n/balance — баланс\n/ref — пригласить друзей\n/id — мой ID и роль\n/news — новости\n/support — поддержка\n/privacy — политика конфиденциальности\n/terms — условия\n\nЧек в любом чате: @' + BOT() + ' 1 USDT', reply_markup: open() });
+        await tg('sendMessage', { chat_id: m.chat.id, text: '/start — главное меню\n/rates — курсы\n/balance — баланс\n/deposit — пополнить\n/withdraw — вывести\n/history — последние операции\n/contact — связь с администратором\n/ref — пригласить друзей\n/id — мой ID и роль\n/news — новости\n/support — поддержка\n/privacy — политика конфиденциальности\n/terms — условия\n\nЧек в любом чате: @' + BOT() + ' 1 USDT', reply_markup: open() });
       }
     }
     if (u.inline_query) {

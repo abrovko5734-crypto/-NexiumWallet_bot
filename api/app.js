@@ -1,4 +1,5 @@
-import { CUR, ADMIN, R, verify, getUser, save, log, clean, add, makeCheck, tg, getRates, lock, unlock, nc, cfg, setCfg, pubCfg, ROLES, PERMS, roleOf, audit, errlog, LIVE, PAY_ON, ASSETS, withLock } from '../lib/core.js';
+import { CUR, ADMIN, R, verify, getUser, save, log, clean, add, makeCheck, tg, getRates, lock, unlock, nc, cfg, setCfg, pubCfg, ROLES, PERMS, roleOf, audit, errlog, LIVE, PAY_ON, TON_ON, ASSETS, CONTACT, withLock } from '../lib/core.js';
+import { tonInfo, scanTon, creditDeposit, createClaim, TON_COINS } from '../lib/ton.js';
 import { cp, createDeposit, settleInvoice, payout, refundWd } from '../lib/pay.js';
 import { resetUser, resetAll, clearOffers, userCard } from '../lib/admin.js';
 import { checkAlerts } from '../lib/alerts.js';
@@ -20,9 +21,9 @@ const allAds = async () => {
   const rows = await Promise.all(ids.map(async i => { const r = await R('GET', 'ad:' + i); if (!r) { await R('SREM', 'ads', i); return null; } return JSON.parse(r); }));
   return rows.filter(Boolean).sort((a, b) => b.ts - a.ts);
 };
-const READ_ONLY = new Set(['me', 'p2p_list', 'ad_list', 'ad_click', 'news_list', 'req_list', 'tk_list', 'a_dash', 'a_users', 'a_cfg_get', 'a_audit', 'a_errs', 'a_health', 'a_roles', 'a_tk_list', 'a_bug_list', 'a_ad_list', 'a_src', 'a_user', 'dep_list', 'wd_list', 'a_wd_list', 'a_solv']);
+const READ_ONLY = new Set(['me', 'p2p_list', 'ad_list', 'ad_click', 'news_list', 'req_list', 'tk_list', 'a_dash', 'a_users', 'a_cfg_get', 'a_audit', 'a_errs', 'a_health', 'a_roles', 'a_tk_list', 'a_bug_list', 'a_ad_list', 'a_src', 'a_user', 'dep_list', 'wd_list', 'ton_info', 'a_wd_list', 'a_solv', 'a_dep_list']);
 // какие действия можно отключить флагом
-const FLAG = { send: 'send', swap: 'swap', dep_new: 'deposit', wd_new: 'withdraw', p2p_make: 'p2p', p2p_buy: 'p2p', mkcheck: 'checks', req_make: 'requests', req_pay: 'requests', tk_new: 'support', tk_reply: 'support' };
+const FLAG = { send: 'send', swap: 'swap', dep_new: 'deposit', ton_claim: 'deposit', wd_new: 'withdraw', p2p_make: 'p2p', p2p_buy: 'p2p', mkcheck: 'checks', req_make: 'requests', req_pay: 'requests', tk_new: 'support', tk_reply: 'support' };
 
 export default async function handler(req, res) {
   const b0 = req.body || {}, tu0 = verify(b0.initData);
@@ -122,8 +123,12 @@ async function run(req, res) {
       }
       case 'consent': { if (b.accept !== true) return fail('Нужно согласие'); me.consent = { v: 1, ts: Date.now() }; await save(me); return ok({ done: 'Спасибо!' }); }
       // ---- реальные пополнения и выводы (Crypto Pay) ----
+      case 'ton_info': {
+        if (!TON_ON) return fail('Пополнение переводом на Tonkeeper пока не настроено');
+        return ok({ ton: tonInfo(me) });
+      }
       case 'dep_new': {
-        if (!PAY_ON) return fail('Пополнение сейчас недоступно');
+        if (!PAY_ON) return fail('Пополнение через @CryptoBot не подключено. Используй перевод на Tonkeeper');
         if (!ASSETS[cur] || !amt) return fail('Проверь монету и сумму');
         const rt = await getRates(), usdv = amt * (rt[cur]?.p || 0);
         if (!usdv) return fail('Курс временно недоступен'); if (usdv < CFG.depMin) return fail(`Минимальное пополнение: $${CFG.depMin}`);
@@ -131,29 +136,66 @@ async function run(req, res) {
         try { const d = await createDeposit(me, cur, amt); return ok({ pay: d, done: 'Счёт создан' }); }
         catch (e) { await errlog('dep_new', e, me.id); return fail(e.api ? 'Платёжный сервис отклонил счёт: ' + e.message : 'Платёжный сервис недоступен, попробуй позже'); }
       }
-      case 'dep_check': {
-        if (!PAY_ON) return ok(); let paid = 0;
-        for (const id of ((await R('SMEMBERS', 'invu:' + me.id)) || []).slice(-30)) { const iv = await getJ('inv:' + id); if (iv && !iv.done) { try { if ((await settleInvoice(id, true)) === 'paid') paid++; } catch (e) { await errlog('dep_check', e, me.id); } } }
-        me = await getUser(me.id); return ok({ done: paid ? `Зачислено платежей: ${paid}` : 'Новых оплат пока нет' });
+      case 'dep_check': { // проверяет и переводы на Tonkeeper, и счета @CryptoBot
+        if (!PAY_ON && !TON_ON) return ok(); let paid = 0;
+        if (TON_ON) { try { paid += (await scanTon(me.id)).credited || 0; } catch (e) { await errlog('dep_check_ton', e, me.id); } }
+        if (PAY_ON) for (const id of ((await R('SMEMBERS', 'invu:' + me.id)) || []).slice(-30)) { const iv = await getJ('inv:' + id); if (iv && !iv.done) { try { if ((await settleInvoice(id, true)) === 'paid') paid++; } catch (e) { await errlog('dep_check', e, me.id); } } }
+        me = await getUser(me.id); return ok({ done: paid ? `Зачислено платежей: ${paid}` : 'Новых поступлений пока нет' });
       }
-      case 'dep_list': { const ids = (await R('SMEMBERS', 'invu:' + me.id)) || []; return ok({ invs: (await many('inv:', ids.slice(-15))).sort((x, y) => y.ts - x.ts) }); }
+      case 'ton_claim': { // «я перевёл»: заявка на ручную проверку (USDT и спорные случаи)
+        if (!TON_ON) return fail('Пополнение переводом на Tonkeeper пока не настроено');
+        if (!TON_COINS.includes(cur) || !amt) return fail('Проверь монету и сумму');
+        const rt = await getRates(), usdv = amt * (rt[cur]?.p || 0);
+        if (usdv && usdv < CFG.depMin) return fail(`Минимальное пополнение: $${CFG.depMin}`);
+        const open = (await many('dclaim:', (await R('SMEMBERS', 'dcu:' + me.id)) || [])).filter(c => c.st === 'review');
+        if (open.length >= 5) return fail('Уже есть 5 заявок на проверке, дождись ответа');
+        const r = await createClaim(me, cur, amt, b.hash, txt(b.note, 100)); if (r.err) return fail(r.err);
+        return ok({ done: 'Заявка отправлена. Зачислим после проверки перевода' });
+      }
+      case 'dep_list': {
+        const [i1, i2, i3] = await Promise.all([R('SMEMBERS', 'invu:' + me.id), R('SMEMBERS', 'tonu:' + me.id), R('SMEMBERS', 'dcu:' + me.id)]);
+        const [invs, tons, cls] = await Promise.all([many('inv:', (i1 || []).slice(-15)), many('tondep:', (i2 || []).slice(-15)), many('dclaim:', (i3 || []).slice(-15))]);
+        const deps = [
+          ...invs.map(x => ({ k: 'inv', c: x.c, a: x.a, ts: x.ts, st: x.done === 'paid' ? 'paid' : x.done ? 'rejected' : 'wait' })),
+          ...tons.map(x => ({ k: 'ton', c: x.c, a: x.a, ts: x.ts, st: 'paid' })),
+          ...cls.map(x => ({ k: 'claim', c: x.c, a: x.a, ts: x.ts, st: x.st, why: x.why || '' }))
+        ].sort((x, y) => y.ts - x.ts).slice(0, 20);
+        return ok({ deps });
+      }
       case 'wd_new': {
-        if (!PAY_ON) return fail('Вывод сейчас недоступен');
+        if (!LIVE) return fail('Вывод сейчас недоступен');
         if (!ASSETS[cur] || !amt) return fail('Проверь монету и сумму');
+        const auto = b.method === 'auto' && PAY_ON, addr = txt(b.addr, 120);
+        if (!auto && addr.length < 6) return fail('Укажи адрес кошелька (например, Tonkeeper), на который отправить выплату');
         if ((me.bal[cur] || 0) < amt) return fail('Недостаточно ' + cur);
+        if ((await many('wd:', (await R('SMEMBERS', 'wdu:' + me.id)) || [])).filter(x => x.st === 'review').length >= 5) return fail('У тебя уже 5 активных заявок на вывод. Дождись обработки или отмени лишние');
         const rt = await getRates(), usdv = amt * (rt[cur]?.p || 0);
         if (!usdv) return fail('Курс временно недоступен'); if (usdv < CFG.wdMin) return fail(`Минимальный вывод: $${CFG.wdMin}`);
         const day = new Date().toISOString().slice(0, 10), spent = me.wdDay?.d === day ? me.wdDay.usd : 0;
         if (CFG.wdDaily > 0 && spent + usdv > CFG.wdDaily) return fail(`Дневной лимит вывода: $${CFG.wdDaily}`);
         const fee = Math.round(amt * CFG.wdFee * 1e8) / 1e8, net = Math.round((amt - fee) * 1e8) / 1e8; if (net <= 0) return fail('Слишком маленькая сумма');
-        const wd = { id: uid(), u: me.id, w: me.wid, c: cur, a: amt, fee, net, usd: Math.round(usdv * 100) / 100, ts: Date.now(), st: usdv <= CFG.wdAutoMax ? 'pending' : 'review' };
-        add(me, cur, -amt); log(me, { t: 'withdraw', c: cur, a: -amt }); me.wdDay = { d: day, usd: spent + usdv }; await save(me);
+        const wd = { id: uid(), u: me.id, w: me.wid, c: cur, a: amt, fee, net, usd: Math.round(usdv * 100) / 100, addr: auto ? '' : addr, method: auto ? 'auto' : 'manual', ts: Date.now(), st: auto && usdv <= CFG.wdAutoMax ? 'pending' : 'review' };
+        add(me, cur, -amt); log(me, { t: 'withdraw', c: cur, a: -amt }); me.wdDay = { d: day, usd: spent + usdv };
+        if (!auto) me.addrs = [addr, ...(me.addrs || []).filter(x => x !== addr)].slice(0, 5); // запоминаем адреса для быстрого выбора
+        await save(me);
         await R('SET', 'wd:' + wd.id, JSON.stringify(wd)); await R('SADD', 'wds', wd.id); await R('SADD', 'wdu:' + me.id, wd.id);
-        if (wd.st === 'review') { tg('sendMessage', { chat_id: ADMIN, text: `🔎 Вывод на проверку: ${wd.net} ${wd.c} (≈$${wd.usd}) от ${me.wid}` }).catch(() => {}); return ok({ done: 'Заявка отправлена на проверку. Обычно это занимает немного времени' }); }
+        if (wd.st === 'review') {
+          tg('sendMessage', { chat_id: ADMIN, text: `🔎 Заявка на вывод #${wd.id}\n${wd.net} ${wd.c} (≈$${wd.usd})\nПользователь: ${me.wid} (${me.id})\n${wd.addr ? 'Адрес: ' + wd.addr : 'На @CryptoBot пользователя'}\nStaff → Выводы` }).catch(() => {});
+          return ok({ wd: { id: wd.id, net: wd.net, c: wd.c, addr: wd.addr, w: me.wid }, done: `Заявка создана. Напиши ${CONTACT}, чтобы получить выплату` });
+        }
         const r = await payout(wd);
         if (r.ok) { me = await getUser(me.id); return ok({ done: `Выведено ${net} ${cur} на твой аккаунт @CryptoBot` }); }
         if (r.definite) { await refundWd(wd, '', true); me = await getUser(me.id); return fail(r.why === 'USER_NOT_FOUND' ? 'Открой @CryptoBot и нажми Start, затем повтори вывод' : 'Вывод отклонён: ' + r.why); }
         return ok({ done: 'Заявка принята и ожидает обработки' });
+      }
+      case 'wd_cancel': {
+        const wd = await getJ('wd:' + b.id); if (!wd || wd.u !== me.id) return fail('Заявка не найдена');
+        if (wd.st !== 'review') return fail('Эту заявку уже нельзя отменить');
+        if ((await R('SET', 'wdbusy:' + wd.id, '1', 'NX', 'EX', 60)) !== 'OK') return fail('Заявка уже обрабатывается');
+        await refundWd(wd, 'Отменено пользователем', true, 'cancelled');
+        me = await getUser(me.id); const wday = new Date(wd.ts).toISOString().slice(0, 10);
+        if (me.wdDay?.d === wday) { me.wdDay.usd = Math.max(0, me.wdDay.usd - (wd.usd || 0)); await save(me); } // отменённая заявка не съедает дневной лимит
+        return ok({ done: 'Заявка отменена, монеты возвращены' });
       }
       case 'wd_list': { const ids = (await R('SMEMBERS', 'wdu:' + me.id)) || []; return ok({ wds: (await many('wd:', ids.slice(-15))).sort((x, y) => y.ts - x.ts) }); }
       // ---- адресная книга ----
@@ -291,9 +333,9 @@ async function run(req, res) {
         if (need2('wd')) return;
         const ids = ((await R('SMEMBERS', 'users')) || []).slice(0, 3000), liab = {};
         for (let i = 0; i < ids.length; i += 50) (await Promise.all(ids.slice(i, i + 50).map(x => getUser(x)))).forEach(u => Object.entries(u.bal).forEach(([c, a]) => liab[c] = (liab[c] || 0) + a));
-        let bal = {}; try { for (const x of await cp('getBalance')) bal[x.currency_code] = Number(x.available); } catch (e) { return fail('Crypto Pay: ' + e.message); }
+        let bal = {}; if (PAY_ON) { try { for (const x of await cp('getBalance')) bal[x.currency_code] = Number(x.available); } catch (e) { return fail('Crypto Pay: ' + e.message); } }
         const pend = await many('wd:', (await R('SMEMBERS', 'wds')) || []);
-        return ok({ solv: Object.keys(ASSETS).map(c => ({ c, liab: +(liab[c] || 0).toFixed(8), real: bal[ASSETS[c]] ?? 0 })), wdPending: pend.filter(x => x.st === 'review').length });
+        return ok({ pay: PAY_ON, solv: Object.keys(ASSETS).map(c => ({ c, liab: +(liab[c] || 0).toFixed(8), real: bal[ASSETS[c]] ?? 0 })), wdPending: pend.filter(x => x.st === 'review').length });
       }
       case 'a_wd_list': {
         if (need2('wd')) return;
@@ -302,11 +344,56 @@ async function run(req, res) {
       }
       case 'a_wd_ok': {
         if (need2('wd')) return;
+        if (!PAY_ON) return fail('Crypto Pay не подключён: переведи монеты вручную и нажми «Отметить выплаченным»');
         const wd = await getJ('wd:' + b.id); if (!wd || !['review', 'pending'].includes(wd.st)) return fail('Заявка уже обработана');
         if (!(await R('SET', 'wdbusy:' + wd.id, '1', 'NX', 'EX', 60))) return fail('Заявка уже обрабатывается');
         const r = await payout(wd); await A('wd_ok', `${wd.w} ${wd.net} ${wd.c} → ${r.ok ? 'ok' : r.why}`);
         if (r.ok) return ok({ done: 'Выплачено' }); if (r.definite) { await refundWd(wd, 'Отклонено платёжным сервисом: ' + r.why); return fail('Выплата отклонена (' + r.why + '), монеты возвращены пользователю'); }
         return fail('Выплата не прошла (' + r.why + '). Заявка осталась на проверке, можно повторить');
+      }
+      case 'a_wd_paid': { // выплата сделана вручную (например, с Tonkeeper)
+        if (need2('wd')) return;
+        const wd = await getJ('wd:' + b.id); if (!wd || !['review', 'pending'].includes(wd.st)) return fail('Заявка уже обработана');
+        if ((await R('SET', 'wdbusy:' + wd.id, '1', 'NX', 'EX', 60)) !== 'OK') return fail('Заявка уже обрабатывается');
+        wd.st = 'done'; wd.done = Date.now(); wd.tid = txt(b.tx, 100); wd.by = me.id; await R('SET', 'wd:' + wd.id, JSON.stringify(wd));
+        await A('wd_paid', `${wd.w} ${wd.net} ${wd.c}${wd.tid ? ' ' + wd.tid : ''}`);
+        tg('sendMessage', { chat_id: wd.u, text: `📤 Вывод выполнен: ${wd.net} ${wd.c}${wd.addr ? '\n→ ' + wd.addr : ''}${wd.tid ? '\n🔗 ' + wd.tid : ''}` }).catch(() => {});
+        return ok({ done: 'Отмечено как выплаченное' });
+      }
+      case 'a_dep_list': {
+        if (need2('wd')) return;
+        const cls = await many('dclaim:', ((await R('SMEMBERS', 'dclaims')) || []).slice(-150));
+        const unm = await many('tonum:', ((await R('SMEMBERS', 'ton:unm')) || []).slice(-50));
+        return ok({ claims: cls.sort((x, y) => (x.st === 'review') !== (y.st === 'review') ? (x.st === 'review' ? -1 : 1) : y.ts - x.ts), unm: unm.sort((x, y) => y.ts - x.ts) });
+      }
+      case 'a_dep_ok': {
+        if (need2('wd')) return;
+        const cl = await getJ('dclaim:' + b.id); if (!cl || cl.st !== 'review') return fail('Заявка уже обработана');
+        if ((await R('SET', 'dcbusy:' + cl.id, '1', 'NX', 'EX', 60)) !== 'OK') return fail('Заявка уже обрабатывается');
+        const a = String(b.amt ?? '').trim() ? clean(b.amt) : cl.a;
+        if (!a) { await R('DEL', 'dcbusy:' + cl.id); return fail('Некорректная сумма'); }
+        try { await creditDeposit(cl.u, cl.c, a, { m: 'ton' }, String(cl.u) === String(me.id)); }
+        catch (e) { await R('DEL', 'dcbusy:' + cl.id); throw e; }
+        cl.st = 'paid'; cl.paid = a; cl.by = me.id; await R('SET', 'dclaim:' + cl.id, JSON.stringify(cl));
+        await A('dep_ok', `${cl.w} ${a} ${cl.c}`); return ok({ done: `Зачислено ${a} ${cl.c}` });
+      }
+      case 'a_dep_no': {
+        if (need2('wd')) return;
+        const cl = await getJ('dclaim:' + b.id); if (!cl || cl.st !== 'review') return fail('Заявка уже обработана');
+        if ((await R('SET', 'dcbusy:' + cl.id, '1', 'NX', 'EX', 60)) !== 'OK') return fail('Заявка уже обрабатывается');
+        cl.st = 'rejected'; cl.why = txt(b.why, 100); cl.by = me.id; await R('SET', 'dclaim:' + cl.id, JSON.stringify(cl));
+        tg('sendMessage', { chat_id: cl.u, text: `❌ Заявка на пополнение ${cl.a} ${cl.c} отклонена.${cl.why ? ' ' + cl.why : ''} Если это ошибка, напиши в поддержку.` }).catch(() => {});
+        await A('dep_no', `${cl.w} ${cl.a} ${cl.c}`); return ok({ done: 'Заявка отклонена' });
+      }
+      case 'a_ton_assign': { // привязать неопознанный перевод к пользователю
+        if (need2('wd')) return;
+        const u = await find(b.to); if (!u) return fail('Пользователь не найден');
+        const un = await getJ('tonum:' + b.id); if (!un) return fail('Перевод уже обработан');
+        if ((await R('SREM', 'ton:unm', un.id)) !== 1) return fail('Перевод уже обработан');
+        try { await creditDeposit(u.id, un.c, un.a, { m: 'ton' }, String(u.id) === String(me.id)); }
+        catch (e) { await R('SADD', 'ton:unm', un.id); throw e; }
+        await R('DEL', 'tonum:' + un.id); await R('SET', 'tondep:' + un.id, JSON.stringify({ id: un.id, u: u.id, c: un.c, a: un.a, ts: un.ts, st: 'paid', src: un.src })); await R('SADD', 'tonu:' + u.id, un.id);
+        await A('ton_assign', `${u.wid} ${un.a} ${un.c}`); return ok({ done: `Зачислено ${un.a} ${un.c} → ${u.wid}` });
       }
       case 'a_wd_no': {
         if (need2('wd')) return;
