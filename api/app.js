@@ -1,4 +1,5 @@
-import { CUR, ADMIN, FEE, R, verify, getUser, save, log, clean, add, makeCheck, PAIRS, PAYOUTS, lastPrice, priceAt, tg, getRates, redeemPromo } from '../lib/core.js';
+import { CUR, ADMIN, FEE, R, verify, getUser, save, log, clean, add, makeCheck, PAIRS, PAYOUTS, lastPrice, priceAt, tg, getRates, redeemPromo, lock, unlock } from '../lib/core.js';
+import { game } from '../lib/games.js';
 
 const STAKE = { 7: 6, 30: 9, 90: 12 }; // дней -> % годовых
 async function find(q) {
@@ -13,7 +14,15 @@ const allAds = async () => {
   const rows = await Promise.all(ids.map(async i => { const r = await R('GET', 'ad:' + i); if (!r) { await R('SREM', 'ads', i); return null; } return JSON.parse(r); }));
   return rows.filter(Boolean).sort((a, b) => b.ts - a.ts);
 };
+const READ_ONLY = new Set(['me', 'p2p_list', 'info', 'ad_list', 'ad_click', 'g_state', 'case_info']);
 export default async function handler(req, res) {
+  const b0 = req.body || {}, tu0 = verify(b0.initData);
+  if (!tu0) return res.status(401).json({ err: 'Открой приложение через Telegram' });
+  const need = !READ_ONLY.has(b0.action);
+  if (need && !(await lock(tu0.id))) return res.status(429).json({ err: 'Слишком быстро, подожди секунду' });
+  try { return await run(req, res); } finally { if (need) await unlock(tu0.id); }
+}
+async function run(req, res) {
   const b = req.body || {}, tu = verify(b.initData);
   if (!tu) return res.status(401).json({ err: 'Открой приложение через Telegram' });
   let me = await getUser(tu.id, tu.first_name || tu.username || ''); const isAdmin = String(tu.id) === ADMIN;
@@ -22,6 +31,12 @@ export default async function handler(req, res) {
   if (me.banned) return fail('Аккаунт заблокирован');
   const cur = String(b.cur || '').toUpperCase(), amt = clean(b.amt);
   try {
+    if (/^(g_|case_|crash_|mines_|dice$|flip$)/.test(String(b.action))) {
+      const r = await game(b.action, me, b);
+      if (!r) return fail('Неизвестное действие');
+      if (r.err) return fail(r.err);
+      return ok(r);
+    }
     switch (b.action) {
       case 'me': return ok();
       case 'send': {
@@ -121,13 +136,6 @@ export default async function handler(req, res) {
         me.stakes = me.stakes.filter(x => x.id !== b.id);
         add(me, st.c, st.a + gain); log(me, { t: full ? 'stake_win' : 'stake_back', c: st.c, a: st.a + gain }); await save(me);
         return ok({ done: full ? `+${gain} ${st.c} дохода` : 'Досрочно: возвращено тело без дохода' });
-      }
-      case 'bonus': {
-        const now = Date.now(), last = me.bonus?.t || 0;
-        if (now - last < 864e5) return fail(`Бонус уже получен. Приходи через ${Math.ceil((864e5 - (now - last)) / 36e5)} ч`);
-        const s = now - last < 1728e5 ? (me.bonus?.s || 0) + 1 : 1, g = Math.min(5 + s * 2, 25);
-        add(me, 'USDT', g); log(me, { t: 'bonus', c: 'USDT', a: g }); me.bonus = { t: now, s }; await save(me);
-        return ok({ done: `+${g} USDT · серия ${s} дн.` });
       }
       case 'promo': {
         const r = await redeemPromo(b.code, me); if (r.err) return fail(r.err);

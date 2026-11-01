@@ -1,0 +1,70 @@
+/* Игры и ежедневный кейс */
+.gmenu{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.gcard{position:relative;overflow:hidden;border:1px solid var(--bd);border-radius:22px;padding:16px 14px 14px;text-align:left;color:var(--tx);background:var(--card);backdrop-filter:blur(12px);display:flex;flex-direction:column;gap:3px;min-height:128px;transition:transform .15s}
+.gcard:active{transform:scale(.97)}
+.gcard .gi{font-size:38px;line-height:1;margin-bottom:8px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.35))}
+.gcard b{font:700 16px Montserrat}.gcard small{font-size:11.5px;color:var(--mute);line-height:1.3}
+.gcard::after{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;opacity:.28;filter:blur(18px)}
+.g-crash::after{background:#ff5f6d}.g-mines::after{background:#ffb04a}.g-dice::after{background:#45aef5}.g-flip::after{background:#f3ba2f}.g-cases::after{background:#9b8cff}.g-daily::after{background:#4fd37c}
+.gback{border:0;background:var(--card);color:var(--tx);border:1px solid var(--bd);padding:9px 16px 9px 12px;border-radius:99px;font:600 13px Montserrat;margin-bottom:14px}
+.gtitle{font:700 20px Montserrat;margin:0 2px 4px}.gdesc{font-size:12.5px;color:var(--mute);margin:0 2px 14px;line-height:1.45}
+.gbal{font-size:13px;color:var(--mute);margin:0 4px 8px;display:flex;justify-content:space-between}.gbal b{color:var(--tx)}
+.gres{border-radius:16px;padding:13px 14px;margin-bottom:12px;font:600 14px Montserrat;text-align:center;animation:winp .5s cubic-bezier(.3,1.6,.5,1)}
+.gres.w{background:rgba(79,211,124,.16);color:var(--up);border:1px solid rgba(79,211,124,.35)}.gres.l{background:rgba(255,95,109,.13);color:var(--down);border:1px solid rgba(255,95,109,.3)}
+.gstat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 16px}
+/* crash */
+.gcv{position:relative;border-radius:22px;overflow:hidden;margin-bottom:12px;height:230px;background:linear-gradient(180deg,rgba(24,32,46,.9),rgba(10,15,24,.95));border:1px solid var(--bd)}
+.gcv canvas{position:absolute;inset:0;width:100%;height:100%}
+.gmult{position:absolute;inset:0;display:grid;place-items:center;font:800 46px Montserrat;pointer-events:none;text-shadow:0 4px 24px rgba(0,0,0,.5)}
+.gmult.over{color:var(--down)}.gmult.won{color:var(--up)}
+.gmult small{display:block;font:600 12px Inter;color:var(--mute);text-align:center;margin-top:-6px}
+/* mines */
+.mgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+.mc{aspect-ratio:1;border:1px solid var(--bd);border-radius:14px;background:var(--card2);color:var(--mute);font-size:24px;display:grid;place-items:center;transition:transform .15s,background .25s}
+.mc:active:not(:disabled){transform:scale(.93)}
+.mc.ok{background:rgba(79,211,124,.2);border-color:rgba(79,211,124,.5);animation:winp .4s cubic-bezier(.3,1.6,.5,1)}
+.mc.bm{background:rgba(255,95,109,.22);border-color:rgba(255,95,109,.55)}.mc.hit{background:#ff5f6d;animation:shake .4s}
+.mc.dim{opacity:.45}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.minfo{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+/* dice */
+input[type=range]{padding:0;height:8px;border-radius:6px;background:rgba(255,255,255,.14);margin:14px 0 18px;accent-color:var(--blue)}
+.droll{text-align:center;font:800 52px Montserrat;margin:6px 0 10px;min-height:64px}.droll.w{color:var(--up)}.droll.l{color:var(--down)}
+.dstat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.dstat div{background:rgba(0,0,0,.25);border-radius:14px;padding:10px 6px;text-align:center;font-size:11px;color:var(--mute)}.dstat b{display:block;color:var(--tx);font:700 15px Montserrat;margin-top:2px}
+/* coin */
+.coinbox{perspective:700px;display:grid;place-items:center;margin:6px 0 16px}
+.gcoin{width:120px;height:120px;border-radius:50%;display:grid;place-items:center;font-size:52px;background:radial-gradient(circle at 30% 30%,#ffe27a,#f3ba2f 60%,#b8860b);box-shadow:0 10px 40px rgba(243,186,47,.4),inset 0 -6px 14px rgba(0,0,0,.25);transform-style:preserve-3d}
+.gcoin.spin{animation:cflip 1.3s cubic-bezier(.3,.8,.3,1)}
+@keyframes cflip{to{transform:rotateY(1800deg)}}
+.sides{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.side{border:1.5px solid var(--bd);background:var(--card);color:var(--tx);border-radius:16px;padding:14px;font:700 15px Montserrat}.side.on{border-color:var(--blue);background:rgba(69,174,245,.15)}
+/* cases + reel */
+.ccards{display:grid;gap:12px;margin-bottom:16px}
+.cc{display:flex;gap:14px;align-items:center;border:1px solid var(--bd);border-radius:20px;padding:14px;background:var(--card);color:var(--tx);text-align:left;width:100%}
+.cc .ci{font-size:40px;width:64px;height:64px;border-radius:18px;display:grid;place-items:center;background:rgba(255,255,255,.06);flex:none}
+.cc b{font:700 16px Montserrat;display:block}.cc small{color:var(--mute);font-size:12px}.cc .pr{margin-left:auto;font:700 14px Montserrat;color:var(--blue);white-space:nowrap}
+.reel{position:relative;overflow:hidden;border-radius:18px;background:rgba(0,0,0,.3);padding:12px 0;margin:10px 0 14px}
+.rtrack{display:flex;will-change:transform}
+.ri{flex:none;width:84px;margin-right:8px;height:84px;border-radius:14px;display:grid;place-items:center;text-align:center;font:700 13px Montserrat;border:1px solid rgba(255,255,255,.08);line-height:1.2}
+.ri.c1{background:linear-gradient(160deg,#2b3545,#1c2432);color:#aab6c6}.ri.c2{background:linear-gradient(160deg,#1c4a78,#143556);color:#9fd4ff}
+.ri.c3{background:linear-gradient(160deg,#52318f,#352063);color:#d2b9ff}.ri.c4{background:linear-gradient(160deg,#8a6310,#5b410a);color:#ffe08a;box-shadow:0 0 18px rgba(255,200,60,.25)}
+.rmark{position:absolute;left:50%;top:0;bottom:0;width:3px;margin-left:-1.5px;background:var(--blue);z-index:2;box-shadow:0 0 14px var(--blue);border-radius:2px}
+.pz{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.pz span{padding:5px 10px;border-radius:99px;font:600 12px Montserrat;border:1px solid rgba(255,255,255,.08)}.pz span.c1{background:#222c3b;color:#aab6c6}.pz span.c2{background:#173f66;color:#9fd4ff}.pz span.c3{background:#3f2776;color:#d2b9ff}.pz span.c4{background:#6e4e0d;color:#ffe08a}
+.pz em{font-style:normal;opacity:.65;margin-left:4px;font-weight:500}
+/* ежедневный кейс на главной */
+.dcase{position:relative;overflow:hidden;border-radius:22px;padding:16px;margin-bottom:16px;background:linear-gradient(135deg,rgba(79,211,124,.2),rgba(69,174,245,.22) 55%,rgba(123,97,255,.24));border:1px solid rgba(255,255,255,.12)}
+.dcase .hd{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.dcase .gift{font-size:42px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.4));animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-5px) rotate(-4deg)}}
+.dcase b.t{font:700 16px Montserrat;display:block}.dcase .sub2{font-size:12.5px;color:rgba(255,255,255,.72);line-height:1.35}
+.dcase .btn{background:#fff;color:#0b2a44;box-shadow:none}
+.dcase .btn[disabled]{opacity:.55}
+.ctask{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.24);border-radius:14px;padding:10px 12px;margin-bottom:8px;font-size:13.5px}
+.ctask small{display:block;color:var(--mute);font-size:11.5px}.ctask .grow{flex:1}.ctask .chip{padding:7px 14px}
+.ctask.ok{opacity:.7}
+.cstrip{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:10px}.cstrip span{flex:none;padding:4px 9px;border-radius:99px;background:rgba(0,0,0,.25);font:600 11.5px Montserrat;color:#cfe3f5}
+.cmeta{display:flex;gap:14px;margin-top:10px;font-size:12px;color:rgba(255,255,255,.7)}.cmeta b{color:#fff}
+.ghist .row{padding:11px 14px}
+.tabs button[hidden]{display:none}

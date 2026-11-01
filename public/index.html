@@ -3,6 +3,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Nexium</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="/games.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -159,7 +160,7 @@ textarea{width:100%;background:rgba(0,0,0,.28);border:1.5px solid transparent;co
  <input class="srch" id="mq" placeholder="Поиск монеты" autocomplete="off">
  <div class="chips" id="ms"></div>
  <div class="list" id="mkt"></div>
- <div class="sm" style="text-align:center">Курсы в реальном времени · Binance</div>
+ <div class="sm" id="rsrc" style="text-align:center">Курсы в реальном времени</div>
 </section>
 
 <section class="pane" id="p-t">
@@ -185,10 +186,12 @@ textarea{width:100%;background:rgba(0,0,0,.28);border:1.5px solid transparent;co
  <div class="list" id="offers"></div>
 </section>
 
+<section class="pane" id="p-g"><div id="gv"></div></section>
+
 <section class="pane" id="p-m">
  <div class="prof"><div class="ln"><div class="av" id="av2">N</div><div class="grow"><b id="nm2" style="font:700 17px Montserrat"></b><div class="sub" id="wid2"></div></div><span class="lv" id="lv2">LVL 1</span></div>
   <div class="bar"><i id="xpb" style="width:0"></i></div><div class="sub" id="xpt" style="margin-top:6px"></div></div>
- <div class="box"><h3>Реферальная программа</h3><div class="sm" style="margin-bottom:12px">Вы оба получаете по 20 USDT, а за каждые 5 друзей — ещё +50 USDT. Приглашено: <b id="rc" style="color:#fff">0</b></div>
+ <div class="box"><h3>Реферальная программа</h3><div class="sm" style="margin-bottom:12px">За каждого друга вы получаете 0.1 TON, а за каждые 5 друзей — ещё +0.5 TON. Приглашено: <b id="rc" style="color:#fff">0</b></div>
   <div class="two eq"><button class="btn" id="refShare">Поделиться</button><button class="btn sec2" id="refBtn">Скопировать</button></div></div>
  <div class="box"><h3>Стейкинг (Earn)</h3><div id="stk"></div><button class="btn" data-a="stake" style="margin-top:10px">Новый стейк</button></div>
  <div class="box"><h3>Промокод</h3><input id="pcode" placeholder="Введи код" autocapitalize="characters"><button class="btn" id="pBtn">Активировать</button></div>
@@ -223,6 +226,7 @@ textarea{width:100%;background:rgba(0,0,0,.28);border:1.5px solid transparent;co
  <button data-t="k"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Рынок</button>
  <button data-t="t"><svg viewBox="0 0 24 24"><path d="M4 18l5-6 4 3 7-9M15 6h5v5"/></svg>Трейд</button>
  <button data-t="p"><svg viewBox="0 0 24 24"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>P2P</button>
+ <button data-t="g"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="11" rx="4"/><path d="M8 10v5M5.5 12.5h5M15.5 11.5h.01M18 14h.01"/></svg>Игры</button>
  <button data-t="m"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Профиль</button>
  <button data-t="a" id="tabA" hidden><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>Админ</button>
 </nav>
@@ -264,7 +268,7 @@ async function api(action,d={}){
  const j=await r.json();if(!r.ok){toast(j.err||'Ошибка',1);return null}
  if(j.info)S.info=j.info;if(j.ads&&action==='ad_list')S.ads=j.ads;if(j.me){S.me=j.me;S.admin=j.isAdmin}render();return j}catch{toast('Нет связи с сервером',1)}}
 async function rates(){
- try{const j=await(await fetch('/api/rates')).json();if(j.p){P=j.p;if(j.fx)FX={...FX,...j.fx};
+ try{const j=await(await fetch('/api/rates')).json();if(j.p){P=j.p;if(j.fx)FX={...FX,...j.fx};if(j.src&&$('#rsrc'))$('#rsrc').textContent='Курсы в реальном времени · '+j.src;
   const v=P[T.c]?.p;if(v&&$('#p-t').classList.contains('on')){T.pts.push(v);T.pts=T.pts.slice(-80);if(T.kind==='candle'&&T.k.length){const l=T.k[T.k.length-1];l[3]=v;l[1]=Math.max(l[1],v);l[2]=Math.min(l[2],v)}chart()}
   render();PV=Object.fromEntries(Object.entries(P).map(([k,v])=>[k,v.p]))}}catch{}
  setTimeout(rates,$('#p-t').classList.contains('on')?2500:7000)}
@@ -274,7 +278,7 @@ const spark=(k,w=62,h=24)=>{const a=SPK[k];if(!a||a.length<3)return `<svg class=
 const TYPE={in:['Получено','↓'],out:['Отправлено','↑'],check_in:['Чек активирован','↓'],check_out:['Чек списан','↑'],admin:['Начисление','★'],trade_bet:['Ставка','▲'],trade_win:['Выигрыш','★'],p2p_buy:['P2P покупка','⇄'],p2p_sell:['P2P продажа','⇄'],bonus:['Бонус','🎁'],swap_in:['Обмен (получено)','⇄'],swap_out:['Обмен (списано)','⇄'],promo:['Промокод','🎟'],stake:['Стейкинг','🔒'],stake_win:['Доход стейкинга','💎'],stake_back:['Стейк возвращён','↩']};
 const curChips=()=>Object.keys(SY).map(k=>`<button class="chip ${k===CU?'on':''}" data-cu="${k}">${SY[k]} ${k}</button>`).join('');
 const txRow=x=>{const L=TYPE[x.t]||[x.t,'•'];return `<div class="row"><div class="coin" style="--c:${x.a>=0?'#2f8f55':'#55627a'};width:40px;height:40px">${L[1]}</div><div class="grow"><b>${L[0]}</b><div class="sub">${new Date(x.ts).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}${x.w?' · '+esc(x.w):''}</div></div><b class="${x.a>=0?'up':'down'}">${x.a>0?'+':''}${amt(x.a)} ${x.c}</b></div>`};
-const xpOf=m=>(m.tx?.length||0)+(m.st?.n||0)*5+(m.refs||0)*25+(m.bonus?.s||0)*3;
+const xpOf=m=>(m.tx?.length||0)+(m.st?.n||0)*5+(m.refs||0)*25+(m.case?.n||0)*3+(m.g?.n||0);
 let ALK='';
 function render(){const m=S.me;if(!m)return;
  const ph=tgw?.initDataUnsafe?.user?.photo_url;
@@ -291,9 +295,8 @@ function render(){const m=S.me;if(!m)return;
  const parts=KEYS.map(k=>({k,v:(m.bal[k]||0)*(P[k]?.p||0)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v),tot=parts.reduce((s,x)=>s+x.v,0),sig=parts.map(x=>x.k+Math.round(x.v/tot*100)).join();
  $('#allocBox').hidden=!tot;if(tot&&sig!==ALK){ALK=sig;let off=0;const circ=251.3;
   $('#alloc').innerHTML=`<svg viewBox="0 0 100 100">${parts.map(x=>{const l=x.v/tot*circ,s=`<circle cx="50" cy="50" r="40" stroke="${C[x.k].c==='#23292f'?'#8aa0b8':C[x.k].c}" stroke-dasharray="${Math.max(l-1.5,0.1)} ${circ}" stroke-dashoffset="${-off}" stroke-linecap="round"/>`;off+=l;return s}).join('')}</svg><div class="lg">${parts.slice(0,6).map(x=>`<div><i style="background:${C[x.k].c==='#23292f'?'#8aa0b8':C[x.k].c}"></i>${x.k}<span>${(x.v/tot*100).toFixed(1)}%</span></div>`).join('')}</div>`}
- // бонус
- const last=m.bonus?.t||0,ok=Date.now()-last>=864e5,streak=Date.now()-last<1728e5?(m.bonus?.s||0):0,cyc=ok?streak%7:streak%7||7;
- $('#bn').innerHTML=`<div class="bonus"><div class="hd"><div class="grow"><b class="t">Ежедневный бонус</b>${ok?'Серия '+streak+' дн. — забирай сегодня':'Следующий через '+Math.ceil((864e5-(Date.now()-last))/36e5)+' ч'}</div>${ok?'<button class="btn" id="bonusBtn">Забрать</button>':''}</div><div class="days">${[1,2,3,4,5,6,7].map(i=>`<div class="dy ${i<=cyc&&(!ok||i<=streak%7||(streak%7===0&&streak>0&&i<=7))&&(ok?i<=streak%7:true)?'d':''} ${ok&&i===streak%7+1?'n':''}">${i}<b>+${Math.min(5+(streak-streak%7+i)*2,25)}</b></div>`).join('')}</div></div>`;
+ // ежедневный кейс (games.js)
+ $('#bn').innerHTML=window.caseCard?caseCard():'';
  $('#ads').innerHTML=S.ads.map(a=>`<div class="ad"><i>Реклама</i><b>${esc(a.title)}</b><p>${esc(a.text)}</p><button data-ad="${esc(a.id)}">${esc(a.btn)}</button></div>`).join('');
  if(S.info){const i=S.info;let v=0;for(const k in i.tot)v+=i.tot[k]*(P[k]?.p||0);$('#sU').textContent=i.users;$('#sT').textContent=fm(v);$('#sD').textContent=i.tr;
   $('#top').innerHTML=i.top.length?i.top.map((u,n)=>`<div class="row"><div class="num">${['🥇','🥈','🥉'][n]||n+1}</div><div class="grow"><b>${esc(u.n)}</b><div class="sub">${u.t} сделок · ${u.r}% побед</div></div><b class="${u.p>=0?'up':'down'}">${u.p>=0?'+':''}${amt(u.p)}</b></div>`).join(''):'<div class="empty">Пока никто не торговал. Стань первым!</div>';
@@ -304,7 +307,7 @@ function render(){const m=S.me;if(!m)return;
  // уровень и достижения
  const xp=xpOf(m),lv=Math.floor(Math.sqrt(xp/4))+1,a0=(lv-1)**2*4,a1=lv**2*4;$('#lv2').textContent='LVL '+lv;$('#lvl').textContent='Уровень '+lv+' · '+xp+' XP';$('#xpb').style.width=((xp-a0)/(a1-a0)*100)+'%';$('#xpt').textContent=`${xp} / ${a1} XP до уровня ${lv+1}`;
  const has=t=>m.tx.some(x=>x.t.startsWith(t)),tv=KEYS.reduce((s,k)=>s+(m.bal[k]||0)*(P[k]?.p||0),0);
- const AC=[['🚀','Старт',m.tx.length>0],['📈','Трейдер',(m.st?.n||0)>=1],['🏆','Профи',(m.st?.n||0)>=25],['🔥','10 побед',(m.st?.w||0)>=10],['🤝','Друг',(m.refs||0)>=1],['🌟','Амбассадор',(m.refs||0)>=5],['📅','Серия 7',(m.bonus?.s||0)>=7],['🔄','Меняла',has('swap')],['💎','Инвестор',has('stake')||(m.stakes||[]).length>0],['🧾','Чеки',has('check')],['🤑','$1000+',tv>=1000],['🛡','Верный',lv>=5]];
+ const AC=[['🚀','Старт',m.tx.length>0],['📈','Трейдер',(m.st?.n||0)>=1],['🏆','Профи',(m.st?.n||0)>=25],['🔥','10 побед',(m.st?.w||0)>=10],['🤝','Друг',(m.refs||0)>=1],['🌟','Амбассадор',(m.refs||0)>=5],['📅','Серия 7',(m.case?.s||0)>=7],['🎁','Кейс',(m.case?.n||0)>=1],['🎮','Игрок',(m.g?.n||0)>=10],['🚀','Хайроллер',(m.gh||[]).some(x=>x.pay>=x.b*10)],['🔄','Меняла',has('swap')],['💎','Инвестор',has('stake')||(m.stakes||[]).length>0],['🧾','Чеки',has('check')],['🤑','$1000+',tv>=1000],['🛡','Верный',lv>=5]];
  $('#ach').innerHTML=AC.map(([e,n,o],i)=>`<div class="ac ${o?'':'lock'}" style="animation-delay:${i*40}ms"><span>${e}</span>${n}</div>`).join('');
  // стейкинг
  $('#stk').innerHTML=(m.stakes||[]).length?`<div class="list" style="margin:0">${m.stakes.map(s=>{const done=Date.now()>=s.e,pr=Math.min(100,(Date.now()-s.s)/(s.e-s.s)*100),left=Math.max(0,Math.ceil((s.e-Date.now())/864e5)),gain=s.a*s.apy/100*s.d/365;
@@ -428,7 +431,6 @@ document.addEventListener('click',async e=>{
  if(d.adt)return done('a_ad_toggle',{id:d.adt});if(d.add)return done('a_ad_del',{id:d.add});if(d.prd)return done('a_promo_del',{code:d.prd});
  if(id==='eye'){HB=!HB;LS.set('nx_hb',HB?'1':'0');tap();return render()}
  if(id==='haptBtn'){HP=!HP;LS.set('nx_hp',HP?'1':'0');return render()}
- if(id==='bonusBtn')return done('bonus');
  if(id==='pBtn'){const r=await done('promo',{code:$('#pcode').value});if(r)$('#pcode').value='';return}
  if(id==='refBtn'){navigator.clipboard?.writeText(`https://t.me/${BOT}?start=r_${S.me.id}`);return toast('Ссылка скопирована')}
  if(id==='refShare')return shareRef();
@@ -460,5 +462,6 @@ setInterval(()=>{let due=0;$$('.cd').forEach(e=>{const s=Math.ceil((+e.dataset.e
  if(due&&!window.stl){window.stl=1;api('settle').then(r=>{window.stl=0;const t=r?.me.done?.[0];if(t&&Date.now()-t.exp<20000){toast('Сделка закрыта: '+({win:'выигрыш +'+amt(t.pay-t.st),lose:'проигрыш',tie:'ничья'})[t.r],t.r==='lose');if(t.r==='win')confetti(120)}})}},1000);
 setInterval(loadK,12000);setInterval(loadSp,300000);setInterval(()=>{if($('#p-w').classList.contains('on'))api('ad_list')},90000);addEventListener('resize',moveInd);
 drawChips();rates();loadSp();api('settle').then(()=>{api('info');api('ad_list')});setTimeout(moveInd,300);
-if(!LS.get('nx_ok',''))sheet(`<h3>Добро пожаловать</h3><div class="warn" style="margin-bottom:14px">Nexium Wallet — демо-кошелёк с <b>виртуальными</b> монетами. Монеты не имеют денежной стоимости, их нельзя ввести или вывести. Курсы реальные, а обмен, трейд, стейкинг и P2P — игра на виртуальном балансе. Каждый день можно забирать бонус.</div><button class="btn" id="okTerms">Понятно</button>`);
-</script></body></html>
+if(!LS.get('nx_ok',''))sheet(`<h3>Добро пожаловать</h3><div class="warn" style="margin-bottom:14px">Nexium Wallet — демо-кошелёк с <b>виртуальными</b> монетами. Монеты не имеют денежной стоимости, их нельзя ввести или вывести. Курсы реальные, а обмен, трейд, стейкинг и P2P — игра на виртуальном балансе. Каждый день можно открыть бесплатный кейс с наградой до 1 TON, а ещё есть игры Crash, Mines, Dice и другие.</div><button class="btn" id="okTerms">Понятно</button>`);
+</script>
+<script src="/games.js"></script></body></html>
