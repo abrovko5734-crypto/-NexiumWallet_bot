@@ -1,4 +1,4 @@
-import { CUR, ADMIN, FEE, R, verify, getUser, save, log, clean, add, makeCheck, PAIRS, PAYOUTS, lastPrice, priceAt, tg, getRates, redeemPromo, lock, unlock } from '../lib/core.js';
+import { CUR, ADMIN, FEE, R, verify, getUser, save, log, clean, add, makeCheck, PAIRS, PAYOUTS, lastPrice, priceAt, tg, getRates, redeemPromo, lock, unlock, nc } from '../lib/core.js';
 import { game } from '../lib/games.js';
 
 const STAKE = { 7: 6, 30: 9, 90: 12 }; // дней -> % годовых
@@ -29,7 +29,7 @@ async function run(req, res) {
   const ok = (extra = {}) => res.json({ me, isAdmin, ...extra });
   const fail = err => res.status(400).json({ err });
   if (me.banned) return fail('Аккаунт заблокирован');
-  const cur = String(b.cur || '').toUpperCase(), amt = clean(b.amt);
+  const cur = nc(String(b.cur || '').toUpperCase()), amt = clean(b.amt);
   try {
     if (/^(g_|case_|crash_|mines_|dice$|flip$)/.test(String(b.action))) {
       const r = await game(b.action, me, b);
@@ -51,7 +51,7 @@ async function run(req, res) {
         tg('sendMessage', { chat_id: to.id, text: `Вам перевод ${amt} ${cur} от ${me.wid}` }).catch(() => {}); return ok();
       }
       case 'swap': { // мгновенный обмен по реальному курсу
-        const f = String(b.from || '').toUpperCase(), t = String(b.to || '').toUpperCase();
+        const f = nc(String(b.from || '').toUpperCase()), t = nc(String(b.to || '').toUpperCase());
         if (!CUR.includes(f) || !CUR.includes(t) || f === t || !amt) return fail('Проверь монеты и сумму');
         if ((me.bal[f] || 0) < amt) return fail('Недостаточно ' + f);
         const rt = await getRates(), pf = rt[f]?.p, pt = rt[t]?.p;
@@ -62,7 +62,7 @@ async function run(req, res) {
         return ok({ done: `${amt} ${f} → ${out} ${t}` });
       }
       case 'trade_open': {
-        const sec = Number(b.sec), st = clean(b.amt), coin = String(b.coin || '').toUpperCase();
+        const sec = Number(b.sec), st = clean(b.amt), coin = nc(String(b.coin || '').toUpperCase());
         if (!PAIRS[coin] || !PAYOUTS[sec] || !['up', 'down'].includes(b.dir)) return fail('Неверные параметры');
         if (st < 1) return fail('Минимальная ставка 1 USDT');
         if (st > 10000) return fail('Максимальная ставка 10 000 USDT');
@@ -87,11 +87,11 @@ async function run(req, res) {
       }
       case 'p2p_list': {
         const ids = await R('SMEMBERS', 'offers'), list = [];
-        for (const i of ids.slice(0, 80)) { const r = await R('GET', 'offer:' + i); if (r) list.push(JSON.parse(r)); else await R('SREM', 'offers', i); }
+        for (const i of ids.slice(0, 80)) { const r = await R('GET', 'offer:' + i); if (r) { const o = JSON.parse(r); o.sc = nc(o.sc); o.wc = nc(o.wc); list.push(o); } else await R('SREM', 'offers', i); }
         return ok({ offers: list.sort((x, y) => y.ts - x.ts) });
       }
       case 'p2p_make': {
-        const sc = String(b.sc).toUpperCase(), wc = String(b.wc).toUpperCase(), sa = clean(b.sa), wa = clean(b.wa);
+        const sc = nc(String(b.sc).toUpperCase()), wc = nc(String(b.wc).toUpperCase()), sa = clean(b.sa), wa = clean(b.wa);
         if (!CUR.includes(sc) || !CUR.includes(wc) || sc === wc || !sa || !wa) return fail('Проверь монеты и суммы');
         if ((me.bal[sc] || 0) < sa) return fail('Недостаточно ' + sc);
         const rt = await getRates(), mk = rt[sc]?.p && rt[wc]?.p ? rt[sc].p / rt[wc].p : 0;
@@ -103,7 +103,7 @@ async function run(req, res) {
       }
       case 'p2p_buy': case 'p2p_cancel': {
         const raw = await R('GET', 'offer:' + b.id); if (!raw) return fail('Объявление уже недоступно');
-        const o = JSON.parse(raw), buy = b.action === 'p2p_buy';
+        const o = JSON.parse(raw), buy = b.action === 'p2p_buy'; o.sc = nc(o.sc); o.wc = nc(o.wc);
         if (buy && o.o === me.id) return fail('Это твоё объявление');
         if (!buy && o.o !== me.id) return fail('Нет доступа');
         if (buy && (me.bal[o.wc] || 0) < o.wa) return fail('Недостаточно ' + o.wc);
@@ -118,7 +118,7 @@ async function run(req, res) {
         await save(me); return ok();
       }
       case 'fav': {
-        const c = String(b.coin || '').toUpperCase(); if (!CUR.includes(c)) return fail('Монета не найдена');
+        const c = nc(String(b.coin || '').toUpperCase()); if (!CUR.includes(c)) return fail('Монета не найдена');
         me.fav = me.fav || []; me.fav = me.fav.includes(c) ? me.fav.filter(x => x !== c) : [...me.fav, c].slice(-12);
         await save(me); return ok();
       }

@@ -4,9 +4,9 @@
   const CH_URL = 'https://t.me/NexiumWallet_News', CHAT_URL = 'https://t.me/NexiumWalletNews_Chat';
   const GAMES = [['crash', '🚀', 'Crash', 'Забери выигрыш до краха'], ['mines', '💣', 'Mines', 'Открывай клетки, обходи мины'], ['dice', '🎲', 'Dice', 'Выбери шанс и множитель'], ['flip', '🪙', 'Монетка', 'Орёл или решка, x1.94'], ['cases', '📦', 'Кейсы', 'Бронза, серебро, золото']];
   const NAMES = { crash: 'Crash', mines: 'Mines', dice: 'Dice', flip: 'Монетка', case: 'Кейс' };
-  let GS = { cases: {}, limits: { TON: { min: .01, max: 50 }, USDT: { min: .1, max: 1000 } } };
-  let V = 'menu', GCUR = LS.get('nx_gc', 'TON'), CI = null, cr = null, mn = null, MM = 3, DCH = 50, DDIR = 'under', FSIDE = 'h', crT = 0, busy = false;
-  if (!['TON', 'USDT'].includes(GCUR)) GCUR = 'TON';
+  let GS = { cases: {}, limits: { GRAM: { min: .01, max: 50 }, USDT: { min: .1, max: 1000 } } };
+  let V = 'menu', GCUR = LS.get('nx_gc', 'GRAM'), CI = null, cr = null, mn = null, MM = 3, DCH = 50, DDIR = 'under', FSIDE = 'h', crT = 0, busy = false;
+  if (!['GRAM', 'USDT'].includes(GCUR)) GCUR = 'GRAM';
   const f8 = x => Math.floor(x * 1e8 + 1e-6) / 1e8, A = n => amt(f8(n));
   const cls4 = (v, t) => v < t[0] ? 'c1' : v < t[1] ? 'c2' : v < t[2] ? 'c3' : 'c4';
   const gv = () => $('#gv');
@@ -26,8 +26,8 @@
   // ---------- общие элементы ----------
   const back = () => `<button class="gback" data-gx="back">‹ Все игры</button>`;
   const betForm = (locked) => `<div class="gbal"><span>Ставка</span><span>Баланс: <b id="g-bal">${A(S.me.bal[GCUR] || 0)} ${GCUR}</b></span></div>
-    <div class="chips">${['TON', 'USDT'].map(c => `<button class="chip ${c === GCUR ? 'on' : ''}" data-gx="cur" data-gv="${c}" ${locked ? 'disabled' : ''}>${c}</button>`).join('')}</div>
-    <input id="g-bet" inputmode="decimal" placeholder="Сумма ставки" value="${LS.get('nx_gb_' + GCUR, GCUR === 'TON' ? '0.1' : '1')}" ${locked ? 'disabled' : ''}>
+    <div class="chips">${['GRAM', 'USDT'].map(c => `<button class="chip ${c === GCUR ? 'on' : ''}" data-gx="cur" data-gv="${c}" ${locked ? 'disabled' : ''}>${c}</button>`).join('')}</div>
+    <input id="g-bet" inputmode="decimal" placeholder="Сумма ставки" value="${LS.get('nx_gb_' + GCUR, GCUR === 'GRAM' ? '0.1' : '1')}" ${locked ? 'disabled' : ''}>
     <div class="sbtn"><button class="chip" data-gx="bm" data-gv="min" ${locked ? 'disabled' : ''}>MIN</button><button class="chip" data-gx="bm" data-gv="half" ${locked ? 'disabled' : ''}>½</button><button class="chip" data-gx="bm" data-gv="x2" ${locked ? 'disabled' : ''}>×2</button><button class="chip" data-gx="bm" data-gv="max" ${locked ? 'disabled' : ''}>MAX</button></div>`;
   const betVal = () => { const v = String($('#g-bet')?.value || '').replace(',', '.'); LS.set('nx_gb_' + GCUR, v); return v; };
   const res = (w, t) => `<div class="gres ${w ? 'w' : 'l'}">${t}</div>`;
@@ -35,10 +35,10 @@
   // ---------- меню ----------
   function menu() {
     const g = S.me.g || { n: 0, w: 0, p: {} }, h = S.me.gh || [];
-    gv().innerHTML = `<div class="gtitle">Мини-игры</div><div class="gdesc">Играй на виртуальные TON и USDT. Результат каждого раунда определяет сервер, шансы честные и указаны в каждой игре.</div>
+    gv().innerHTML = `<div class="gtitle">Мини-игры</div><div class="gdesc">Играй на виртуальные GRAM и USDT. Результат каждого раунда определяет сервер, шансы честные и указаны в каждой игре.</div>
     <div class="gmenu">${GAMES.map(x => `<button class="gcard g-${x[0]}" data-gx="open" data-gv="${x[0]}"><span class="gi">${x[1]}</span><b>${x[2]}</b><small>${x[3]}</small></button>`).join('')}</div>
     <div class="gstat"><div class="st"><b>${g.n}</b><span>игр</span></div><div class="st"><b>${g.n ? Math.round(g.w / g.n * 100) : 0}%</b><span>побед</span></div>
-      <div class="st"><b class="${(g.p.TON || 0) >= 0 ? 'up' : 'down'}">${(g.p.TON || 0) > 0 ? '+' : ''}${A(g.p.TON || 0)}</b><span>итог, TON</span></div></div>
+      <div class="st"><b class="${(g.p.GRAM || 0) >= 0 ? 'up' : 'down'}">${(g.p.GRAM || 0) > 0 ? '+' : ''}${A(g.p.GRAM || 0)}</b><span>итог, GRAM</span></div></div>
     <div class="sec">Последние раунды</div><div class="list ghist">${h.length ? h.map(x => `<div class="row"><div class="coin" style="--c:${x.pay > x.b ? '#2f8f55' : '#55627a'};width:38px;height:38px">${x.pay > x.b ? '★' : '•'}</div><div class="grow"><b>${NAMES[x.g] || x.g}</b><div class="sub">${esc(x.i || '')} · ${new Date(x.ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div></div><b class="${x.pay >= x.b ? 'up' : 'down'}">${x.pay >= x.b ? '+' : ''}${A(x.pay - x.b)} ${x.c}</b></div>`).join('') : '<div class="empty">Пока нет сыгранных раундов</div>'}</div>`;
   }
 
@@ -176,12 +176,12 @@
   window.caseCard = () => {
     if (!CI) return `<div class="dcase"><div class="hd"><div class="gift">🎁</div><div><b class="t">Ежедневный кейс</b><div class="sub2">Загрузка…</div></div></div></div>`;
     const l = left(), s = CI.subs, ok = s.ch && s.chat;
-    const strip = `<div class="cstrip">${CI.prizes.filter((_, i) => i % 2 === 0 || i === CI.prizes.length - 1).map(p => `<span>${p.a} TON</span>`).join('')}</div>`;
+    const strip = `<div class="cstrip">${CI.prizes.filter((_, i) => i % 2 === 0 || i === CI.prizes.length - 1).map(p => `<span>${p.a} GRAM</span>`).join('')}</div>`;
     const head = (t, sub) => `<div class="hd"><div class="gift">🎁</div><div class="grow"><b class="t">${t}</b><div class="sub2">${sub}</div></div></div>`;
-    const meta = `<div class="cmeta"><span>Серия: <b>${CI.streak} дн.</b></span><span>Открыто: <b>${CI.total}</b></span><span>Выиграно: <b>${A(CI.sum)} TON</b></span></div>`;
+    const meta = `<div class="cmeta"><span>Серия: <b>${CI.streak} дн.</b></span><span>Открыто: <b>${CI.total}</b></span><span>Выиграно: <b>${A(CI.sum)} GRAM</b></span></div>`;
     if (l > 0) return `<div class="dcase">${head('Следующий кейс через', `<b class="ccd" style="font:800 22px Montserrat;color:#fff">${hms(l)}</b>`)}${meta}${strip}</div>`;
     const task = (done, t, u, k) => `<div class="ctask ${done ? 'ok' : ''}"><span>${done ? '✅' : '⭕'}</span><div class="grow">${t}<small>${u}</small></div>${done ? '' : `<button class="chip" data-gx="sub" data-gv="${k}">Открыть</button>`}</div>`;
-    return `<div class="dcase">${head('Бесплатный кейс готов!', 'Награда от 0.01 до 1 TON. Раз в 24 часа.')}
+    return `<div class="dcase">${head('Бесплатный кейс готов!', 'Награда от 0.01 до 1 GRAM. Раз в 24 часа.')}
       ${ok ? '' : task(s.ch, 'Подписаться на канал', '@NexiumWallet_News', 'ch') + task(s.chat, 'Вступить в чат', '@NexiumWalletNews_Chat', 'chat')}
       ${s.bad ? `<div class="sub2" style="margin-bottom:8px">⚠️ Бот не смог проверить: ${[s.badCh && 'канал', s.badChat && 'чат'].filter(Boolean).join(' и ')}. Скорее всего, бот не добавлен туда администратором.${S.admin && s.why ? '<br><b>' + esc(s.why) + '</b>' : ''}</div>` : ''}
       ${ok ? '<button class="btn" data-gx="copenD">🎁 Открыть кейс</button>' : '<button class="btn" data-gx="cchk">Проверить подписку</button>'}${meta}${strip}</div>`;
@@ -195,9 +195,9 @@
     if (!j) { busy = false; loadCase(); return; }
     CI = { ...j.case, at: Date.now() }; const pr = CI.prizes.map(p => p.a);
     sheet(`<h3>🎁 Ежедневный кейс</h3><div class="reel" id="g-reel"></div><div id="g-cres"></div><button class="btn sec2" id="g-close" data-gx="close" disabled>Подожди…</button>`);
-    reel($('#g-reel'), pr, j.win.prize, v => v + '<br>TON', v => cls4(v, [.1, .3, .6]), () => {
+    reel($('#g-reel'), pr, j.win.prize, v => v + '<br>GRAM', v => cls4(v, [.1, .3, .6]), () => {
       busy = false; hap('success'); confetti(j.win.prize >= .3 ? 160 : 80);
-      const r = $('#g-cres'); if (r) r.innerHTML = res(true, `+${j.win.prize} TON · серия ${j.win.streak} дн.`);
+      const r = $('#g-cres'); if (r) r.innerHTML = res(true, `+${j.win.prize} GRAM · серия ${j.win.streak} дн.`);
       const c = $('#g-close'); if (c) { c.disabled = false; c.textContent = 'Отлично'; } $('#bn').innerHTML = caseCard();
     });
   }

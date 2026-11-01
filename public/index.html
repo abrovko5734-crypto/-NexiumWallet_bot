@@ -138,7 +138,7 @@ textarea{width:100%;background:rgba(0,0,0,.28);border:1.5px solid transparent;co
 <section class="pane on" id="p-w">
  <div class="top"><div class="av" id="av">N</div><div class="who"><b id="nm">Nexium</b><span id="lvl"></span></div><button class="ibtn" id="eye" style="margin-left:auto">👁</button><button class="pill" id="widBtn">ID <b id="wid">…</b></button></div>
  <div class="tick" id="tick"></div>
- <div class="hero"><img class="fl" src="/icons/btc.svg" alt=""><img class="fl" src="/icons/eth.svg" alt=""><img class="fl" src="/icons/ton.svg" alt="">
+ <div class="hero"><img class="fl" src="/icons/btc.svg" alt=""><img class="fl" src="/icons/eth.svg" alt=""><img class="fl" src="/icons/gram.svg" alt="">
   <div class="sub">Общий баланс</div><div class="total sk" id="total">00000</div><div class="sub" id="btc">&nbsp;</div><div class="cur" id="curs"></div></div>
  <div class="acts">
   <button class="act" data-a="send"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Отправить</button>
@@ -191,7 +191,7 @@ textarea{width:100%;background:rgba(0,0,0,.28);border:1.5px solid transparent;co
 <section class="pane" id="p-m">
  <div class="prof"><div class="ln"><div class="av" id="av2">N</div><div class="grow"><b id="nm2" style="font:700 17px Montserrat"></b><div class="sub" id="wid2"></div></div><span class="lv" id="lv2">LVL 1</span></div>
   <div class="bar"><i id="xpb" style="width:0"></i></div><div class="sub" id="xpt" style="margin-top:6px"></div></div>
- <div class="box"><h3>Реферальная программа</h3><div class="sm" style="margin-bottom:12px">За каждого друга вы получаете 0.1 TON, а за каждые 5 друзей — ещё +0.5 TON. Приглашено: <b id="rc" style="color:#fff">0</b></div>
+ <div class="box"><h3>Реферальная программа</h3><div class="sm" style="margin-bottom:12px">За каждого друга вы получаете 0.1 GRAM, а за каждые 5 друзей — ещё +0.5 GRAM. Приглашено: <b id="rc" style="color:#fff">0</b></div>
   <div class="two eq"><button class="btn" id="refShare">Поделиться</button><button class="btn sec2" id="refBtn">Скопировать</button></div></div>
  <div class="box"><h3>Стейкинг (Earn)</h3><div id="stk"></div><button class="btn" data-a="stake" style="margin-top:10px">Новый стейк</button></div>
  <div class="box"><h3>Промокод</h3><input id="pcode" placeholder="Введи код" autocapitalize="characters"><button class="btn" id="pBtn">Активировать</button></div>
@@ -240,7 +240,7 @@ let HP=LS.get('nx_hp','1')==='1',HB=LS.get('nx_hb','0')==='1';
 const hap=t=>{if(HP)try{tgw?.HapticFeedback?.notificationOccurred(t)}catch{}};
 const tap=()=>{if(HP)try{tgw?.HapticFeedback?.selectionChanged()}catch{}};
 const BOT='NexiumWallet_bot',FEE=.003;
-const C={TON:{c:'#0098ea',n:'Toncoin'},BTC:{c:'#f7931a',n:'Bitcoin'},ETH:{c:'#627eea',n:'Ethereum'},USDT:{c:'#26a17b',n:'Tether'},SOL:{c:'#9945ff',n:'Solana'},BNB:{c:'#f3ba2f',n:'BNB'},XRP:{c:'#23292f',n:'XRP'},DOGE:{c:'#c2a633',n:'Dogecoin'},TRX:{c:'#eb0029',n:'TRON'},LTC:{c:'#345d9d',n:'Litecoin'}};
+const C={GRAM:{c:'#0098ea',n:'Gram (бывш. Toncoin)'},BTC:{c:'#f7931a',n:'Bitcoin'},ETH:{c:'#627eea',n:'Ethereum'},USDT:{c:'#26a17b',n:'Tether'},SOL:{c:'#9945ff',n:'Solana'},BNB:{c:'#f3ba2f',n:'BNB'},XRP:{c:'#23292f',n:'XRP'},DOGE:{c:'#c2a633',n:'Dogecoin'},TRX:{c:'#eb0029',n:'TRON'},LTC:{c:'#345d9d',n:'Litecoin'}};
 const KEYS=Object.keys(C),TRD=KEYS.filter(k=>k!=='USDT');
 const PAYS={30:1.8,60:1.85,300:1.9,900:1.92},SECL={30:'30 сек',60:'1 мин',300:'5 мин',900:'15 мин'};
 const PLANS={7:6,30:9,90:12};
@@ -334,7 +334,7 @@ function coinSheet(k){const p=P[k]||{p:0,d:0,h:0,l:0,v:0},b=S.me.bal[k]||0,fav=(
  <div class="pay" style="margin-top:14px"><span>Твой баланс</span><b>${H(amt(b)+' '+k+' · '+fm(b*p.p))}</b></div>
  <div class="two eq"><button class="btn" data-cs="swap" data-k="${k}">Обменять</button><button class="btn sec2" data-cs="send" data-k="${k}">Отправить</button></div>
  ${TRD.includes(k)?`<button class="btn sec2" style="margin-top:10px" data-cs="trade" data-k="${k}">Торговать ${k}/USDT</button>`:''}`)}
-function swapSheet(f='USDT',t='TON'){mode='swap';if(f===t)t=f==='USDT'?'TON':'USDT';
+function swapSheet(f='USDT',t='GRAM'){mode='swap';if(f===t)t=f==='USDT'?'GRAM':'USDT';
  sheet(`<h3>Обмен</h3><div class="lbl">Отдаю</div><div class="two"><input id="sa" inputmode="decimal" placeholder="0"><select id="sf">${opts(f)}</select></div><div class="sbtn"><button class="chip" data-sq="25">25%</button><button class="chip" data-sq="50">50%</button><button class="chip" data-sq="100">MAX</button></div>
  <div class="flip"><button id="flip">⇅</button></div><div class="lbl">Получаю</div><select id="st">${opts(t)}</select><div class="q" id="sq"></div><button class="btn" id="go">Обменять</button>`);quote()}
 function quote(){const el=$('#sq');if(!el)return;const f=$('#sf').value,t=$('#st').value,a=+String($('#sa').value).replace(',','.')||0;
@@ -344,8 +344,8 @@ function stakeSheet(c='USDT'){mode='stake';sheet(`<h3>Стейкинг</h3><div 
 function plans(){$('#plans').innerHTML=Object.keys(PLANS).map(d=>`<button class="plan ${+d===SP?'on':''}" data-plan="${d}"><b>${PLANS[d]}%</b>${d} дн.</button>`).join('');kq()}
 function kq(){const el=$('#kq');if(!el)return;const a=+String($('#ka').value).replace(',','.')||0,c=$('#kc').value,g=a*PLANS[SP]/100*SP/365;el.innerHTML=`Доход за ${SP} дн.: <b class="up">+${amt(+g.toFixed(8))} ${c}</b><br><span class="sm">Баланс ${amt(S.me.bal[c]||0)} ${c} · ${PLANS[SP]}% годовых</span>`}
 const forms={
- send:(c='TON')=>{mode='send';const rc=[...new Set(S.me.tx.filter(x=>x.t==='out'&&x.w).map(x=>x.w))].slice(0,5);sheet(`<h3>Отправить</h3><div class="lbl">ID кошелька получателя</div><input id="f1" placeholder="NX1234567" autocapitalize="characters">${rc.length?`<div class="rcp">${rc.map(w=>`<button class="chip" data-rcp="${esc(w)}">${esc(w)}</button>`).join('')}</div>`:''}<div class="lbl">Сумма и монета</div><div class="two"><input id="f2" inputmode="decimal" placeholder="0"><select id="f3">${opts(c)}</select></div><button class="btn" id="go">Отправить</button>`)},
- check:()=>{mode='check';sheet(`<h3>Создать чек</h3><div class="two"><input id="f2" inputmode="decimal" placeholder="Сумма"><select id="f3">${opts('USDT')}</select></div><button class="btn" id="go">Создать</button><div class="sub" style="margin-top:14px;text-align:center">Монеты спишутся с твоего баланса, когда чек заберут. В чате: <b style="color:#fff">@${BOT} 1 TON</b></div>`)},
+ send:(c='GRAM')=>{mode='send';const rc=[...new Set(S.me.tx.filter(x=>x.t==='out'&&x.w).map(x=>x.w))].slice(0,5);sheet(`<h3>Отправить</h3><div class="lbl">ID кошелька получателя</div><input id="f1" placeholder="NX1234567" autocapitalize="characters">${rc.length?`<div class="rcp">${rc.map(w=>`<button class="chip" data-rcp="${esc(w)}">${esc(w)}</button>`).join('')}</div>`:''}<div class="lbl">Сумма и монета</div><div class="two"><input id="f2" inputmode="decimal" placeholder="0"><select id="f3">${opts(c)}</select></div><button class="btn" id="go">Отправить</button>`)},
+ check:()=>{mode='check';sheet(`<h3>Создать чек</h3><div class="two"><input id="f2" inputmode="decimal" placeholder="Сумма"><select id="f3">${opts('USDT')}</select></div><button class="btn" id="go">Создать</button><div class="sub" style="margin-top:14px;text-align:center">Монеты спишутся с твоего баланса, когда чек заберут. В чате: <b style="color:#fff">@${BOT} 1 GRAM</b></div>`)},
  recv:()=>{mode='recv';let qr='';try{const q=qrcode(0,'M');q.addData(S.me.wid);q.make();qr=q.createSvgTag(5,0)}catch{}
   sheet(`<h3>Получить</h3>${qr?`<div class="qr">${qr}</div>`:''}<div class="lbl" style="text-align:center">Твой ID кошелька</div><div class="chk num" style="font-size:24px;text-align:center">${esc(S.me.wid)}</div><button class="btn" id="go">Скопировать ID</button>`)},
  swap:()=>swapSheet(),stake:()=>stakeSheet(),
@@ -444,7 +444,7 @@ document.addEventListener('click',async e=>{
  if(id==='cp'){navigator.clipboard?.writeText(LK);return toast('Ссылка скопирована')}
  if(id==='sh')return tgw?tgw.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(LK)+'&text='+encodeURIComponent(window.lkT)):0;
  if(id==='bUp')return trade('up');if(id==='bDn')return trade('down');
- if(id==='pNew'){mode='p2p';sheet(`<h3>Новое объявление</h3><div class="lbl">Отдаю (уйдёт в залог)</div><div class="two"><input id="f1" inputmode="decimal" placeholder="Сумма"><select id="f2">${opts('USDT')}</select></div><div class="lbl">Хочу получить</div><div class="two"><input id="f3" inputmode="decimal" placeholder="Сумма"><select id="f4">${opts('TON')}</select></div><div class="q" id="pq"></div><button class="btn sec2" id="pMk" style="margin-bottom:10px">Подставить рыночную цену</button><button class="btn" id="goP">Опубликовать</button>`);p2pQuote();return}
+ if(id==='pNew'){mode='p2p';sheet(`<h3>Новое объявление</h3><div class="lbl">Отдаю (уйдёт в залог)</div><div class="two"><input id="f1" inputmode="decimal" placeholder="Сумма"><select id="f2">${opts('USDT')}</select></div><div class="lbl">Хочу получить</div><div class="two"><input id="f3" inputmode="decimal" placeholder="Сумма"><select id="f4">${opts('GRAM')}</select></div><div class="q" id="pq"></div><button class="btn sec2" id="pMk" style="margin-bottom:10px">Подставить рыночную цену</button><button class="btn" id="goP">Опубликовать</button>`);p2pQuote();return}
  if(id==='pMk'){const sa=+String($('#f1').value).replace(',','.')||0,sc=$('#f2').value,wc=$('#f4').value;if(sa&&P[sc]&&P[wc])$('#f3').value=+(sa*P[sc].p/P[wc].p).toPrecision(6);return}
  if(id==='goP'){const r=await api('p2p_make',{sa:$('#f1').value,sc:$('#f2').value,wa:$('#f3').value,wc:$('#f4').value});if(r){shut();toast('Опубликовано');p2pLoad()}return}
  if(id==='adSave')return done('a_ad_save',{title:$('#adT').value,text:$('#adX').value,url:$('#adU').value,btn:$('#adB').value,days:$('#adD').value});
@@ -462,6 +462,6 @@ setInterval(()=>{let due=0;$$('.cd').forEach(e=>{const s=Math.ceil((+e.dataset.e
  if(due&&!window.stl){window.stl=1;api('settle').then(r=>{window.stl=0;const t=r?.me.done?.[0];if(t&&Date.now()-t.exp<20000){toast('Сделка закрыта: '+({win:'выигрыш +'+amt(t.pay-t.st),lose:'проигрыш',tie:'ничья'})[t.r],t.r==='lose');if(t.r==='win')confetti(120)}})}},1000);
 setInterval(loadK,12000);setInterval(loadSp,300000);setInterval(()=>{if($('#p-w').classList.contains('on'))api('ad_list')},90000);addEventListener('resize',moveInd);
 drawChips();rates();loadSp();api('settle').then(()=>{api('info');api('ad_list')});setTimeout(moveInd,300);
-if(!LS.get('nx_ok',''))sheet(`<h3>Добро пожаловать</h3><div class="warn" style="margin-bottom:14px">Nexium Wallet — демо-кошелёк с <b>виртуальными</b> монетами. Монеты не имеют денежной стоимости, их нельзя ввести или вывести. Курсы реальные, а обмен, трейд, стейкинг и P2P — игра на виртуальном балансе. Каждый день можно открыть бесплатный кейс с наградой до 1 TON, а ещё есть игры Crash, Mines, Dice и другие.</div><button class="btn" id="okTerms">Понятно</button>`);
+if(!LS.get('nx_ok',''))sheet(`<h3>Добро пожаловать</h3><div class="warn" style="margin-bottom:14px">Nexium Wallet — демо-кошелёк с <b>виртуальными</b> монетами. Монеты не имеют денежной стоимости, их нельзя ввести или вывести. Курсы реальные, а обмен, трейд, стейкинг и P2P — игра на виртуальном балансе. Каждый день можно открыть бесплатный кейс с наградой до 1 GRAM, а ещё есть игры Crash, Mines, Dice и другие.</div><button class="btn" id="okTerms">Понятно</button>`);
 </script>
 <script src="/games.js"></script></body></html>
