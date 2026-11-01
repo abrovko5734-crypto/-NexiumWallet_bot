@@ -1,5 +1,6 @@
 import { CUR, ADMIN, FEE, R, verify, getUser, save, log, clean, add, makeCheck, PAIRS, PAYOUTS, lastPrice, priceAt, tg, getRates, redeemPromo, lock, unlock, nc, cfg, setCfg, pubCfg } from '../lib/core.js';
 import { game, gameStats } from '../lib/games.js';
+import { resetUser, resetAll, clearOffers, airdrop, resetStats, userCard } from '../lib/admin.js';
 
 const STAKE = { 7: 6, 30: 9, 90: 12 }; // дней -> % годовых
 async function find(q) {
@@ -139,12 +140,13 @@ async function run(req, res) {
         add(me, st.c, st.a + gain); log(me, { t: full ? 'stake_win' : 'stake_back', c: st.c, a: st.a + gain }); await save(me);
         return ok({ done: full ? `+${gain} ${st.c} дохода` : 'Досрочно: возвращено тело без дохода' });
       }
+      case 'notify': { me.nt = b.on !== false; await save(me); return ok({ done: me.nt ? 'Напоминания включены' : 'Напоминания выключены' }); }
       case 'promo': {
         const r = await redeemPromo(b.code, me); if (r.err) return fail(r.err);
         me = r.me; return ok({ done: `Промокод активирован: +${r.ok.a} ${r.ok.c}` });
       }
       case 'info': {
-        const c = await R('GET', 'cache:info'); const contact = process.env.CONTACT_USERNAME || '';
+        const c = await R('GET', 'cache:info'); const contact = process.env.CONTACT_USERNAME || 'Keldisqq';
         if (c) return ok({ info: { ...JSON.parse(c), contact } });
         const ids = ((await R('SMEMBERS', 'users')) || []).slice(0, 300), us = await Promise.all(ids.map(i => getUser(i))), tot = {}; let tr = 0;
         us.forEach(u => { Object.entries(u.bal).forEach(([k, v]) => tot[k] = (tot[k] || 0) + v); tr += u.st?.n || 0; });
@@ -180,6 +182,33 @@ async function run(req, res) {
           ...(typeof b.games === 'boolean' ? { games: b.games } : {}), ...(typeof b.cases === 'boolean' ? { cases: b.cases } : {}) });
         if (r.err) return fail(r.err); await R('DEL', 'cache:info'); return ok({ conf: r.cfg, done: 'Настройки сохранены' });
       }
+      case 'a_user': {
+        const u = await find(b.to); if (!u) return fail('Пользователь не найден');
+        return ok({ card: userCard(u) });
+      }
+      case 'a_reset': { // сброс счетов: одному пользователю или всем; режим bal — только балансы, full — начать заново
+        const mode = b.mode === 'full' ? 'full' : 'bal', bonus = b.bonus !== false;
+        if (!String(b.to || '').trim()) {
+          if (b.confirm !== 'СБРОС') return fail('Для сброса ВСЕХ введи слово СБРОС в поле подтверждения');
+          const n = await resetAll(mode, bonus); return ok({ done: `Сброшено пользователей: ${n} (${mode === 'full' ? 'всё заново' : 'только счета'})` });
+        }
+        const u = await find(b.to); if (!u) return fail('Пользователь не найден');
+        if (u.id === ADMIN && b.confirm !== 'СБРОС') return fail('Это твой аккаунт. Для сброса введи СБРОС');
+        await resetUser(u.id, mode, bonus); await clearOffers(u.id); await R('DEL', 'cache:info');
+        tg('sendMessage', { chat_id: u.id, text: mode === 'full' ? '🔄 Администратор сбросил твой аккаунт: начни заново!' : '🔄 Администратор сбросил твои счета.' }).catch(() => {});
+        return ok({ done: `Сброшено: ${u.wid} (${mode === 'full' ? 'всё заново' : 'только счета'})` });
+      }
+      case 'a_airdrop': {
+        const n = clean(b.amt); if (!CUR.includes(cur) || !n || n > 100000) return fail('Проверь сумму и монету');
+        const k = await airdrop(cur, n, String(b.text || '').slice(0, 500) || `🎁 Всем пользователям начислено ${n} ${cur}!`);
+        return ok({ done: `Начислено ${n} ${cur} · получателей: ${k}` });
+      }
+      case 'a_msg': {
+        const u = await find(b.to), text = String(b.text || '').trim().slice(0, 3000);
+        if (!u || !text) return fail('Нужны пользователь и текст');
+        const r = await tg('sendMessage', { chat_id: u.id, text }); return r.ok ? ok({ done: 'Отправлено' }) : fail('Не удалось отправить (пользователь закрыл бота?)');
+      }
+      case 'a_stats_reset': { await resetStats(); return ok({ done: 'Статистика игр обнулена', stats: await gameStats() }); }
       case 'a_case_reset': {
         if (!String(b.to || '').trim()) { const r = await setCfg({ resetAll: true }); return ok({ conf: r.cfg, done: 'Кулдаун кейса сброшен для всех' }); }
         const u = await find(b.to); if (!u) return fail('Пользователь не найден');

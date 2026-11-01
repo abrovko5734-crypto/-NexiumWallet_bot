@@ -257,6 +257,14 @@
         const t = setInterval(() => { if (el.isConnected) tap(); else clearInterval(t); }, 200);
         setTimeout(() => { clearInterval(t); busy = false; if (V === 'wheel') { wheel({ ...w, rot: target % 360 }); hap(w.win ? 'success' : 'error'); if (w.m >= 3) confetti(100); else if (w.win) confetti(40); } }, 4350); return; }
       case 'qclaim': { const j = await call('quest_claim', { id: v }); if (j) { QS = j.quests; toast(j.done); confetti(60); quests(); } return; }
+      case 'nt': { const j = await call('notify', { on: S.me.nt === false }); if (j) toast(j.done); return; }
+      case 'ucard': { const j = await call('a_user', { to: $('#u-to').value }); if (!j) return; const c = j.card, bal = Object.entries(c.bal).filter(x => x[1]).map(x => `${A(x[1])} ${x[0]}`).join(', ') || 'пусто';
+        $('#u-card').innerHTML = `<div class="ucard"><b>${esc(c.name || '—')}</b> · ${esc(c.wid)} · TG ${esc(c.id)}${c.banned ? ' · <b style="color:#ff5f6d">БАН</b>' : ''}<br>Баланс: <b>${bal}</b><br>Игр: <b>${c.g?.n || 0}</b> · Кейсов: <b>${c.case?.n || 0}</b> (серия ${c.case?.s || 0}) · Друзей: <b>${c.refs}</b> · Заданий: <b>${c.quests}</b><br>Пришёл: ${new Date(c.at).toLocaleDateString('ru-RU')} · Напоминания: ${c.nt ? 'вкл' : 'выкл'}</div>`; return; }
+      case 'umsg': { const j = await call('a_msg', { to: $('#u-to').value, text: $('#u-msg').value }); if (j) { toast(j.done); $('#u-msg').value = ''; } return; }
+      case 'areset2': { const to = $('#u-to').value.trim(); if (!confirm(to ? `Сбросить ${to}?` : 'Сбросить ВСЕХ пользователей?')) return;
+        const j = await call('a_reset', { to, mode: $('#r-mode').value, bonus: $('#r-bonus').value === '1', confirm: $('#r-ok').value.trim() }); if (j) { toast(j.done); $('#r-ok').value = ''; loadCase(); } return; }
+      case 'adrop': { if (!confirm('Начислить всем пользователям?')) return; const j = await call('a_airdrop', { amt: $('#d-amt').value, cur: $('#d-cur').value, text: $('#d-txt').value }); if (j) { toast(j.done); confetti(60); } return; }
+      case 'astr': { if (!confirm('Обнулить статистику игр?')) return; const j = await call('a_stats_reset'); if (j) { toast(j.done); adminLoad(); } return; }
       case 'atg': { if (!ACF) return; ACF.conf[v] = !ACF.conf[v]; adminFill(); return tap(); }
       case 'asave': { const g = id => $('#' + id).value, c = ACF?.conf || {};
         const j = await call('a_cfg_set', { caseHours: g('c-h'), welcome: g('c-w'), ref: g('c-r'), refMile: g('c-m'), maxBetGRAM: g('c-bg'), maxBetUSDT: g('c-bu'), games: !!c.games, cases: !!c.cases });
@@ -283,6 +291,16 @@
     <button class="btn" data-gx="asave">Сохранить настройки</button>
     <div class="lbl" style="margin-top:16px">Сбросить кулдаун кейса (оставь пусто — сбросить ВСЕМ)</div><input id="c-to" placeholder="Telegram ID или ID кошелька (необяз.)"><button class="btn sec2" data-gx="areset">Сбросить кулдаун</button>
     <div class="sec" style="margin:18px 2px 10px;font-size:15px">📊 Статистика игр</div><div class="astat" id="a-st"></div></div>`;
+  const adminBox2 = () => `<div class="box" id="a-tools"><h3>🧰 Пользователи и счета</h3>
+    <input id="u-to" placeholder="Telegram ID или ID кошелька"><div class="two eq"><button class="btn sec2" data-gx="ucard">Карточка</button><button class="btn sec2" data-gx="umsg">Написать</button></div>
+    <input id="u-msg" placeholder="Текст личного сообщения"><div id="u-card"></div>
+    <div class="dng"><h3>🔄 Сброс счетов</h3><div class="sm" style="margin-bottom:10px">Кому: ID из поля выше. Поле пустое — сбросить ВСЕМ пользователям.</div>
+      <select id="r-mode" class="mini"><option value="bal">Только счета: балансы, стейки, открытые сделки</option><option value="full">Всё заново: баланс, история, игры, кейс, задания</option></select>
+      <select id="r-bonus" class="mini"><option value="1">Выдать стартовый бонус после сброса</option><option value="0">Без бонуса (нулевой баланс)</option></select>
+      <input id="r-ok" placeholder="Для сброса ВСЕХ введи слово СБРОС"><button class="btn rd2" data-gx="areset2">Сбросить</button></div>
+    <div class="dng" style="background:rgba(79,211,124,.1);border-color:rgba(79,211,124,.3)"><h3>🎁 Раздача всем</h3>
+      <div class="two"><input id="d-amt" inputmode="decimal" placeholder="Сумма каждому"><select id="d-cur">${opts('USDT')}</select></div><input id="d-txt" placeholder="Сообщение (необязательно)"><button class="btn" data-gx="adrop">Начислить всем</button></div>
+    <button class="btn sec2" data-gx="astr" style="margin-top:12px">Обнулить статистику игр</button></div>`;
   let ACF = null;
   function adminFill() {
     if (!ACF) return; const c = ACF.conf, st = ACF.stats, set = (id, v) => { const e = $('#' + id); if (e && document.activeElement !== e) e.value = v; };
@@ -292,12 +310,12 @@
     const a = $('#a-st'); if (a) a.innerHTML = cell('Раундов', st.rounds || 0) + cell('Ставки GRAM / выплаты', A(gi) + ' / ' + A(go)) + cell('Ставки USDT / выплаты', A(ui) + ' / ' + A(uo)) + cell('Кейсов открыто', st['case:n'] || 0) + cell('Выдано кейсами', A(st['case:sum'] || 0) + ' GRAM') + cell('Заданий / награды', (st['quest:n'] || 0) + ' / ' + A(st['quest:sum'] || 0)) + cell('Crash / Mines', (st['g:crash'] || 0) + ' / ' + (st['g:mines'] || 0)) + cell('Dice / Монетка / Колесо', (st['g:dice'] || 0) + ' / ' + (st['g:flip'] || 0) + ' / ' + (st['g:wheel'] || 0));
   }
   async function adminLoad() {
-    if (!S.admin) return; if (!$('#a-cfg')) $('#p-a').insertAdjacentHTML('afterbegin', adminBox());
+    if (!S.admin) return; if (!$('#a-cfg')) $('#p-a').insertAdjacentHTML('afterbegin', adminBox() + adminBox2());
     const j = await call('a_cfg_get', {}, true); if (j?.conf) { ACF = j; adminFill(); }
   }
 
   // ---------- Настройки, видимые всем (награда за друга и т.п.) ----------
-  const applyCfg = () => { const c = S.cfg; if (!c) return; const a = $('#refA'), m = $('#refM'); if (a) a.textContent = c.ref; if (m) m.textContent = c.refMile; };
+  const applyCfg = () => { const c = S.cfg; if (!c) return; const a = $('#refA'), m = $('#refM'); if (a) a.textContent = c.ref; if (m) m.textContent = c.refMile; const n = $('#ntBtn'); if (n && S.me) n.textContent = 'Напоминания: ' + (S.me.nt === false ? 'выкл' : 'вкл'); };
   const _render = render; render = function () { _render(); applyCfg(); };
 
   // ---------- Подключение к основному приложению ----------
