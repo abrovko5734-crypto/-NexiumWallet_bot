@@ -15,8 +15,8 @@ export default async function handler(req, res) {
   const b = await tg('setChatMenuButton', { menu_button: { type: 'web_app', text: 'Кошелёк', web_app: { url: process.env.APP_URL || host } } });
   const c = await tg('setMyCommands', { commands: [
     { command: 'start', description: 'Главное меню' }, { command: 'rates', description: 'Курсы монет' }, { command: 'balance', description: 'Мой баланс' },
-    { command: 'case', description: 'Ежедневный кейс' }, { command: 'games', description: 'Мини-игры' }, { command: 'ref', description: 'Пригласить друзей' }, { command: 'promo', description: 'Активировать промокод' }, { command: 'help', description: 'Помощь' }] });
-  const d = await tg('setMyShortDescription', { short_description: 'ДЕМО-кошелёк (виртуальные монеты): реальные курсы, игры, ежедневный кейс до 1 GRAM 🎁' });
-  const e = await tg('setMyDescription', { description: 'Nexium Wallet — ДЕМО-кошелёк в Telegram. Это не настоящий кошелёк: все монеты виртуальные, ввод и вывод невозможны. Реальные курсы Gram (бывш. Toncoin) и других монет, обмен, P2P, трейдинг, мини-игры (Crash, Mines, Dice, Колесо), задания и бесплатный кейс каждые 24 часа (0.01–1 GRAM) за подписку на канал и чат.' });
+    { command: 'news', description: 'Новости' }, { command: 'support', description: 'Поддержка' }, { command: 'id', description: 'Мой ID и роль' }, { command: 'ref', description: 'Пригласить друзей' }, { command: 'help', description: 'Помощь' }] });
+  const d = await tg('setMyShortDescription', { short_description: 'ДЕМО-кошелёк (виртуальные монеты): реальные курсы, обмен, P2P, чеки 💎' });
+  const e = await tg('setMyDescription', { description: 'Nexium Wallet — ДЕМО-кошелёк в Telegram. Все монеты виртуальные, ввод и вывод невозможны. Реальные курсы, мгновенный обмен, P2P-биржа, чеки, запросы платежа, ценовые оповещения, адресная книга и поддержка.' });
   res.json({ webhook: a, menu: b, commands: c, short: d, desc: e });
 }
